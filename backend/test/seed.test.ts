@@ -1,4 +1,5 @@
-import { stat } from "node:fs/promises";
+import { readdir, stat } from "node:fs/promises";
+import path from "node:path";
 import request from "supertest";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import {
@@ -85,11 +86,15 @@ describe("seed Data Demo", () => {
   it("mengisi Admin, Pelanggan, audio, dan Pembelian di ketiga status secara idempoten", { timeout: 120_000 }, async () => {
     await jalankanSeed(pool, ctx.config, () => {});
     const setelahPertama = await hitungDataDemo();
+    const audioPertama = await hitungBerkasAudio();
 
     await jalankanSeed(pool, ctx.config, () => {});
     const setelahKedua = await hitungDataDemo();
+    const audioKedua = await hitungBerkasAudio();
 
     expect(setelahKedua).toEqual(setelahPertama);
+    expect(audioKedua).toEqual(audioPertama);
+    expect(audioKedua).toEqual({ mp3: 10, trial: 10 });
     expect(setelahKedua).toEqual({
       admin: 1,
       pelanggan: 3,
@@ -261,6 +266,15 @@ describe("seed Data Demo", () => {
     );
   });
 });
+
+async function hitungBerkasAudio() {
+  const mp3 = await readdir(path.join(ctx.audioDir, "mp3"));
+  const trial = await readdir(path.join(ctx.audioDir, "trial"));
+  return {
+    mp3: mp3.filter((berkas) => berkas.endsWith(".mp3")).length,
+    trial: trial.filter((berkas) => berkas.endsWith(".mp3")).length,
+  };
+}
 
 async function hitungDataDemo() {
   const hitung = async (sql: string) => {
