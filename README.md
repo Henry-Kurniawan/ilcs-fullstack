@@ -21,7 +21,7 @@ cp .env.example .env   # opsional, nilai bawaan sudah cocok dengan Docker Compos
 npm run dev            # PostgreSQL, migrasi, backend (:3000), frontend (:5173)
 ```
 
-Buka http://localhost:5173. Halaman awal menampilkan status health dari `/api/health` (frontend memakai proxy Vite).
+Buka http://localhost:5173. Halaman awal menampilkan katalog Lagu dari `/api/lagu` (frontend memakai proxy Vite).
 
 ## Skrip
 | Perintah | Fungsi |
@@ -30,6 +30,7 @@ Buka http://localhost:5173. Halaman awal menampilkan status health dari `/api/he
 | `npm test` | `tsc --noEmit` semua workspace, lalu Vitest (membutuhkan Docker untuk PostgreSQL) |
 | `npm run build` | Build frontend ke `frontend/dist` |
 | `npm run migrate` | Menjalankan migrasi SQL di `backend/migrations` |
+| `npm run seed` | Mengisi Genre dan Lagu Data Demo secara idempoten |
 | `npm run db:up` | Menjalankan PostgreSQL saja |
 
 PostgreSQL dev berjalan di port 5433. Tes memakai database `musicpedia_test` yang dibuat ulang setiap kali dijalankan.
