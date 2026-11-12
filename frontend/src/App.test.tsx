@@ -8,6 +8,7 @@ type AkunUji = {
   id: number;
   email: string;
   nama: string;
+  telepon: string | null;
   peran: "PELANGGAN" | "ADMIN";
   aktif: boolean;
 };
@@ -197,6 +198,7 @@ it("menampilkan email dan tombol keluar saat Pelanggan sudah masuk", async () =>
     id: 1,
     email: "siti@example.com",
     nama: "Siti Rahma",
+    telepon: null,
     peran: "PELANGGAN",
     aktif: true,
   });
@@ -220,6 +222,7 @@ it("menampilkan daftar Lagu termasuk yang disembunyikan untuk Admin", async () =
     id: 2,
     email: "admin@musicpedia.id",
     nama: "Admin Musikapedia",
+    telepon: null,
     peran: "ADMIN",
     aktif: true,
   });
@@ -236,6 +239,7 @@ it("menampilkan jumlah Lagu di indikator Keranjang pada header", async () => {
     id: 1,
     email: "siti@example.com",
     nama: "Siti Rahma",
+    telepon: null,
     peran: "PELANGGAN",
     aktif: true,
   });
@@ -251,6 +255,7 @@ it("menampilkan halaman Keranjang Pelanggan", async () => {
     id: 1,
     email: "siti@example.com",
     nama: "Siti Rahma",
+    telepon: null,
     peran: "PELANGGAN",
     aktif: true,
   });
@@ -271,6 +276,7 @@ it("menampilkan riwayat Pembelian dengan status dan aksi melanjutkan", async () 
     id: 1,
     email: "siti@example.com",
     nama: "Siti Rahma",
+    telepon: null,
     peran: "PELANGGAN",
     aktif: true,
   });
@@ -304,6 +310,7 @@ it("menampilkan halaman profil Pelanggan", async () => {  stubFetch({
     id: 1,
     email: "siti@example.com",
     nama: "Siti Rahma",
+    telepon: null,
     peran: "PELANGGAN",
     aktif: true,
   });
@@ -311,6 +318,7 @@ it("menampilkan halaman profil Pelanggan", async () => {  stubFetch({
 
   expect(await screen.findByRole("heading", { name: "Profil" })).toBeTruthy();
   expect(screen.getByLabelText("Nama")).toBeTruthy();
+  expect(screen.getByLabelText("Telepon")).toBeTruthy();
   expect(screen.getByDisplayValue("Siti Rahma")).toBeTruthy();
   expect(screen.getByRole("button", { name: "Simpan" })).toBeTruthy();
   expect(screen.getByLabelText("Kata sandi lama")).toBeTruthy();
@@ -322,6 +330,7 @@ it("menampilkan area Admin Pelanggan bagi Admin", async () => {
     id: 1,
     email: "admin@musicpedia.id",
     nama: "",
+    telepon: null,
     peran: "ADMIN",
     aktif: true,
   });
@@ -340,6 +349,7 @@ it("menutup area Admin Pelanggan bagi Pelanggan", async () => {
     id: 2,
     email: "siti@example.com",
     nama: "Siti Rahma",
+    telepon: null,
     peran: "PELANGGAN",
     aktif: true,
   });
@@ -355,6 +365,7 @@ it("menampilkan Laporan Penjualan dengan tabel dan ekspor untuk Admin", async ()
     id: 2,
     email: "admin@musicpedia.id",
     nama: "Admin Musikapedia",
+    telepon: null,
     peran: "ADMIN",
     aktif: true,
   });
@@ -382,6 +393,7 @@ it("menampilkan halaman Lagu Saya dengan tombol unduh", async () => {
     id: 1,
     email: "siti@example.com",
     nama: "Siti Rahma",
+    telepon: null,
     peran: "PELANGGAN",
     aktif: true,
   });

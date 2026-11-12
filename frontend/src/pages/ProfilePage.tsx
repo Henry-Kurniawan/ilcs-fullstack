@@ -133,6 +133,25 @@ export function ProfilePage() {
             />
           </div>
 
+          <div>
+            <label htmlFor="telepon" className="block text-sm font-medium">
+              Telepon
+            </label>
+            <input
+              key={akun.telepon ?? ""}
+              id="telepon"
+              name="telepon"
+              type="tel"
+              autoComplete="tel"
+              defaultValue={akun.telepon ?? ""}
+              maxLength={30}
+              className={kelasInput}
+            />
+            <p className="mt-1 text-sm text-slate-500">
+              Opsional. Dipakai Admin untuk menghubungi Anda bila perlu.
+            </p>
+          </div>
+
           {pesanProfil ? (
             <p
               role="status"

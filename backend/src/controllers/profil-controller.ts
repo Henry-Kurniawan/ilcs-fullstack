@@ -8,8 +8,8 @@ export interface ProfilControllerDeps {
   profilService: ProfilService;
 }
 
-export function toProfil({ id, email, nama }: Akun): Profil {
-  return { id, email, nama };
+export function toProfil({ id, email, nama, telepon }: Akun): Profil {
+  return { id, email, nama, telepon };
 }
 
 function akunSaatIni(req: Request): Akun {
