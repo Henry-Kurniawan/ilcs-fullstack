@@ -1,5 +1,6 @@
 import { createHash, timingSafeEqual } from "node:crypto";
-import type { MidtransNotification, StatusPembelian } from "@musicpedia/shared";
+import type { MidtransNotification } from "@musicpedia/shared";
+import { withTransaction } from "../db.ts";
 import type { Pool } from "../db.ts";
 import { AppError } from "../errors.ts";
 import type {
@@ -8,9 +9,9 @@ import type {
 } from "../payment-gateway/client.ts";
 import {
   pembelianDenganKodeOrder,
-  tandaiPembelianGagal,
-  tandaiPembelianLunas,
+  transisiPembelian,
 } from "../pembelian/repository.ts";
+import type { StatusAkhirPembelian } from "../pembelian/repository.ts";
 
 export interface WebhookService {
   terima(notifikasi: MidtransNotification): Promise<void>;
@@ -44,7 +45,7 @@ function tandaTanganSah(
  */
 export function petakanStatusTransaksi(
   status: StatusTransaksiGateway,
-): StatusPembelian | null {
+): StatusAkhirPembelian | null {
   if (status.status === "settlement") return "LUNAS";
   if (status.status === "capture") {
     if (status.fraudStatus === "accept") return "LUNAS";
@@ -78,9 +79,11 @@ export function createWebhookService(
       }
 
       // Notifikasi untuk kode order yang tidak kita kenal diabaikan.
-      if (!(await pembelianDenganKodeOrder(pool, notifikasi.order_id))) {
-        return;
-      }
+      const pembelian = await pembelianDenganKodeOrder(
+        pool,
+        notifikasi.order_id,
+      );
+      if (!pembelian) return;
 
       // Status dicek ulang ke Status API; isi notifikasi tidak dipercaya sendiri.
       let status: StatusTransaksiGateway;
@@ -96,11 +99,12 @@ export function createWebhookService(
       if (status.kodeOrder !== notifikasi.order_id) return;
 
       const hasil = petakanStatusTransaksi(status);
-      if (hasil === "LUNAS") {
-        await tandaiPembelianLunas(pool, notifikasi.order_id);
-      } else if (hasil === "GAGAL") {
-        await tandaiPembelianGagal(pool, notifikasi.order_id);
-      }
+      if (hasil === null) return;
+      // Primitive transisi yang sama dengan Penyapu: hanya dari Menunggu
+      // Pembayaran, sehingga notifikasi ganda atau terlambat tidak berefek.
+      await withTransaction(pool, (db) =>
+        transisiPembelian(db, pembelian.id, hasil),
+      );
     },
   };
 }
