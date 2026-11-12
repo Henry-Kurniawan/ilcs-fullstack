@@ -22,6 +22,18 @@ _Avoid_: Operator, administrator sistem
 Satu judul musik dengan harga sendiri yang dijual di MusicPedia. Lagu dapat disembunyikan dari katalog, tetapi Lagu yang pernah terjual tidak pernah dihapus.
 _Avoid_: Track, musik, audio, produk
 
+**Artis**:
+Nama pembawa sebuah Lagu, ditulis apa adanya (misalnya "A feat. B"). Setiap Lagu punya tepat satu Artis.
+_Avoid_: Penyanyi, musisi, band
+
+**Pencipta**:
+Nama penulis lagu yang dicatat sebagai keterangan sebuah Lagu.
+_Avoid_: Komposer, songwriter
+
+**Label Rekaman**:
+Perusahaan pemilik rekaman sebuah Lagu, yang memberi lisensi kepada PT Musika Indonesia untuk menjualnya.
+_Avoid_: Label, publisher
+
 **Trial**:
 Cuplikan 30 detik dari sebuah Lagu yang hanya bisa di-stream dan tidak bisa diunduh.
 _Avoid_: Preview, sample, demo
@@ -41,11 +53,15 @@ _Avoid_: Cart, troli
 
 **Pembelian**:
 Satu transaksi pembayaran untuk satu atau lebih Lagu, dengan harga yang dicatat saat checkout.
-_Avoid_: Order, pesanan, transaksi, langganan
+_Avoid_: Order, pesanan, transaksi, transaksi penjualan, langganan
+
+**Item Pembelian**:
+Satu Lagu di dalam satu Pembelian, beserta harga Lagu itu saat checkout.
+_Avoid_: Detail pembelian, order line, baris transaksi
 
 **Menunggu Pembayaran**:
 Status awal Pembelian, sebelum Payment Gateway mengonfirmasi hasil pembayaran.
-_Avoid_: Pending
+_Avoid_: Pending, status pembayaran
 
 **Lunas**:
 Status akhir Pembelian yang sudah dibayar. Semua Lagu di dalamnya menjadi milik Pelanggan.
