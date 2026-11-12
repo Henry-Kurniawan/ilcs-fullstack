@@ -170,17 +170,19 @@ Script membaca `.env.production` secara otomatis (atau variabel environment), la
 2. mengarsipkan `/data/audio` dari container backend ke `audio.tar.gz`;
 3. menulis `manifest.txt` dan `SHA256SUMS`;
 4. menyimpan ke `BACKUP_DIR/backup-YYYYMMDDTHHMMSSZ/`;
-5. menyalin ke remote rclone bila `BACKUP_RCLONE_REMOTE` diisi;
+5. menyalin ke `BACKUP_OFFSITE_DIR` bila diisi, lalu ke remote rclone bila `BACKUP_RCLONE_REMOTE` diisi;
 6. menghapus backup lokal yang lebih tua dari `BACKUP_KEEP_DAYS` (bawaan 14 hari).
 
-Script berhenti dengan pesan `GAGAL` bila database/backend tidak berjalan, dump kosong, dump tidak lengkap, atau arsip audio kosong.
+Script berhenti dengan pesan `GAGAL` bila database/backend tidak berjalan, dump kosong, dump tidak lengkap, atau arsip audio kosong. Di produksi (`NODE_ENV=production`), script juga berhenti sebelum memulai bila tidak ada tujuan off-site: isi `BACKUP_RCLONE_REMOTE` atau `BACKUP_OFFSITE_DIR`. Ini mencegah backup hanya menumpuk di disk server yang sama.
 
 Variabel penting:
 | Variabel | Arti |
 | --- | --- |
-| `BACKUP_DIR` | Tujuan lokal, misalnya `/var/backups/musicpedia` atau mount NFS |
+| `BACKUP_DIR` | Tujuan lokal, misalnya `/var/backups/musicpedia` |
 | `BACKUP_KEEP_DAYS` | Retensi backup lokal dan remote |
 | `BACKUP_RCLONE_REMOTE` | Remote rclone tujuan off-site, misalnya `offsite:musicpedia-backup` |
+| `BACKUP_OFFSITE_DIR` | Direktori off-site alternatif, misalnya mount NFS/SSHFS dari host lain |
+| `NODE_ENV` | `production` mewajibkan salah satu tujuan off-site |
 | `ENV_FILE` | Bawaan `.env.production`; isi kosong untuk memakai environment shell saja |
 
 Contoh off-site dengan rclone:
@@ -189,7 +191,7 @@ rclone config       # buat remote bernama offsite
 BACKUP_RCLONE_REMOTE=offsite:musicpedia-backup ./scripts/backup.sh
 rclone ls offsite:musicpedia-backup
 ```
-Lokasi berbeda dengan server bisa berupa bucket S3/Backblaze/Drive lewat rclone, atau direktori NFS/SSHFS yang di-mount sebagai `BACKUP_DIR`. Backup yang hanya berada di volume/disk server yang sama belum memenuhi NFR Security #3.
+Alternatif tanpa rclone: mount direktori host lain (NFS/SSHFS) lalu isi `BACKUP_OFFSITE_DIR`. `BACKUP_DIR` sendiri tidak dianggap off-site. Backup yang hanya berada di volume/disk server yang sama belum memenuhi NFR Security #3.
 
 ### Menjadwalkan setiap 24 jam
 Cron (pukul 02:17 waktu server):
