@@ -6,6 +6,7 @@ import { Layout } from "./Layout.tsx";
 import { KeranjangProvider } from "./keranjang/KeranjangContext.tsx";
 import { KeranjangPage } from "./pages/KeranjangPage.tsx";
 import { LoginPage } from "./pages/LoginPage.tsx";
+import { ProfilePage } from "./pages/ProfilePage.tsx";
 import { RegisterPage } from "./pages/RegisterPage.tsx";
 
 export function App() {
@@ -19,6 +20,7 @@ export function App() {
             <Route path="keranjang" element={<KeranjangPage />} />
             <Route path="registrasi" element={<RegisterPage />} />
             <Route path="masuk" element={<LoginPage />} />
+            <Route path="profil" element={<ProfilePage />} />
           </Route>
         </Routes>
       </KeranjangProvider>

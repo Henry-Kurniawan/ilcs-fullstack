@@ -7,6 +7,7 @@ import { App } from "./App.tsx";
 type AkunUji = {
   id: number;
   email: string;
+  nama: string;
   peran: "PELANGGAN" | "ADMIN";
   aktif: boolean;
 };
@@ -109,6 +110,7 @@ it("menampilkan email dan tombol keluar saat Pelanggan sudah masuk", async () =>
   stubFetch({
     id: 1,
     email: "siti@example.com",
+    nama: "Siti Rahma",
     peran: "PELANGGAN",
     aktif: true,
   });
@@ -122,6 +124,7 @@ it("menampilkan jumlah Lagu di indikator Keranjang pada header", async () => {
   stubFetch({
     id: 1,
     email: "siti@example.com",
+    nama: "Siti Rahma",
     peran: "PELANGGAN",
     aktif: true,
   });
@@ -136,6 +139,7 @@ it("menampilkan halaman Keranjang Pelanggan", async () => {
   stubFetch({
     id: 1,
     email: "siti@example.com",
+    nama: "Siti Rahma",
     peran: "PELANGGAN",
     aktif: true,
   });
@@ -160,4 +164,23 @@ it("mengarahkan Pengunjung ke login saat menambah Lagu ke Keranjang", async () =
   fireEvent.click(tombol);
 
   expect(await screen.findByRole("heading", { name: "Masuk" })).toBeTruthy();
+});
+
+it("menampilkan halaman profil Pelanggan", async () => {
+  stubFetch({
+    id: 1,
+    email: "siti@example.com",
+    nama: "Siti Rahma",
+    peran: "PELANGGAN",
+    aktif: true,
+  });
+  renderRute("/profil");
+
+  expect(await screen.findByRole("heading", { name: "Profil" })).toBeTruthy();
+  expect(screen.getByLabelText("Nama")).toBeTruthy();
+  expect(screen.getByDisplayValue("Siti Rahma")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Simpan" })).toBeTruthy();
+  expect(screen.getByLabelText("Kata sandi lama")).toBeTruthy();
+  expect(screen.getByLabelText("Kata sandi baru")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Ganti kata sandi" })).toBeTruthy();
 });
