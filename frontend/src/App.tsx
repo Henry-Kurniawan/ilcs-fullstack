@@ -1,10 +1,15 @@
 import { Route, Routes } from "react-router";
-import { HomePage } from "./HomePage.tsx";
+import { KatalogPage } from "./KatalogPage.tsx";
+import { LaguDetailPage } from "./LaguDetailPage.tsx";
+import { Layout } from "./Layout.tsx";
 
 export function App() {
   return (
     <Routes>
-      <Route path="/" element={<HomePage />} />
+      <Route element={<Layout />}>
+        <Route path="/" element={<KatalogPage />} />
+        <Route path="/lagu/:id" element={<LaguDetailPage />} />
+      </Route>
     </Routes>
   );
 }
