@@ -7,6 +7,12 @@ import { createProfilController } from "./controllers/profil-controller.ts";
 import type { Pool } from "./db.ts";
 import { AppError } from "./errors.ts";
 import { katalogRouter } from "./katalog/controller.ts";
+import {
+  createKeranjangController,
+  keranjangRouter,
+} from "./keranjang/controller.ts";
+import { createKeranjangRepository } from "./keranjang/repository.ts";
+import { createKeranjangService } from "./keranjang/service.ts";
 import { createAuthMiddleware } from "./middleware/auth.ts";
 import { createAkunRepository } from "./repositories/akun-repository.ts";
 import { createAdminRouter } from "./routes/admin-routes.ts";
@@ -48,6 +54,13 @@ export function createApp({ pool, config }: AppDeps) {
   const authController = createAuthController({ authService });
   const profilController = createProfilController({ profilService });
   const authMiddleware = createAuthMiddleware(akunRepo);
+  const keranjangService = createKeranjangService(
+    pool,
+    createKeranjangRepository(pool),
+  );
+  const keranjangController = createKeranjangController({
+    service: keranjangService,
+  });
 
   app.use(createSessionMiddleware(pool, config));
   app.use(authMiddleware.muatAkunAktif);
@@ -59,6 +72,7 @@ export function createApp({ pool, config }: AppDeps) {
   });
 
   app.use("/api", katalogRouter(pool));
+  app.use("/api", keranjangRouter(keranjangController, authMiddleware));
   app.use("/api/auth", createAuthRouter(authController));
   app.use("/api/profil", createProfilRouter(profilController, authMiddleware));
   app.use("/api/admin", createAdminRouter(authMiddleware));

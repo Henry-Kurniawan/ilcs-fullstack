@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import { laguResponseSchema, type Lagu } from "@musicpedia/shared";
 import { formatRupiah, formatTanggal } from "./format.ts";
+import { TambahKeranjangButton } from "./components/TambahKeranjangButton.tsx";
 
 type Status = "memuat" | "siap" | "tidak-ada" | "gagal";
 
@@ -94,6 +95,8 @@ export function LaguDetailPage() {
               </dd>
             </div>
           </dl>
+
+          <TambahKeranjangButton laguId={lagu.id} />
         </article>
       )}
     </main>

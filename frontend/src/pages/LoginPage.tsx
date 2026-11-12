@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { loginRequestSchema } from "@musicpedia/shared";
 import { pesanKesalahan } from "../api.ts";
 import { useAuth } from "../auth/AuthContext.tsx";
@@ -7,8 +7,17 @@ import { useAuth } from "../auth/AuthContext.tsx";
 export function LoginPage() {
   const { refresh } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [pesan, setPesan] = useState<string | null>(null);
   const [mengirim, setMengirim] = useState(false);
+
+  function tujuanSetelahMasuk(): string {
+    const lanjut = searchParams.get("lanjut");
+    if (lanjut && lanjut.startsWith("/") && !lanjut.startsWith("//")) {
+      return lanjut;
+    }
+    return "/";
+  }
 
   async function kirim(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -33,7 +42,7 @@ export function LoginPage() {
         return;
       }
       await refresh();
-      navigate("/");
+      navigate(tujuanSetelahMasuk());
     } catch {
       setPesan("Tidak bisa menghubungi server. Coba lagi.");
     } finally {
