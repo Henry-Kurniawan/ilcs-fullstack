@@ -3,6 +3,7 @@ import {
   laporanResponseSchema,
   type LaporanResponse,
 } from "@musicpedia/shared";
+import { apiJson } from "../api.ts";
 import { formatRupiah } from "../format.ts";
 import { NavigasiAdmin } from "./NavigasiAdmin.tsx";
 
@@ -61,15 +62,11 @@ export function AdminLaporanPage() {
     });
 
     setStatus("memuat");
-    fetch(`/api/admin/laporan?${params.toString()}`, {
+    apiJson(`/api/admin/laporan?${params.toString()}`, laporanResponseSchema, {
       signal: controller.signal,
     })
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
       .then((body) => {
-        setLaporan(laporanResponseSchema.parse(body));
+        setLaporan(body);
         setStatus("siap");
       })
       .catch(() => {

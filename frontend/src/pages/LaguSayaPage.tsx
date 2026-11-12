@@ -4,7 +4,7 @@ import {
   daftarLaguSayaResponseSchema,
   type Lagu,
 } from "@musicpedia/shared";
-import { pesanKesalahan } from "../api.ts";
+import { apiJson, pesanDariError } from "../api.ts";
 import { useAuth } from "../auth/AuthContext.tsx";
 import { formatTanggal } from "../format.ts";
 
@@ -20,19 +20,18 @@ export function LaguSayaPage() {
     if (akun?.peran !== "PELANGGAN") return;
     const controller = new AbortController();
     setStatus("memuat");
-    fetch("/api/lagu-saya", { signal: controller.signal })
-      .then(async (res) => {
-        if (!res.ok) {
-          setPesan(await pesanKesalahan(res));
-          setStatus("gagal");
-          return;
-        }
-        setLagu(daftarLaguSayaResponseSchema.parse(await res.json()).data);
+    apiJson("/api/lagu-saya", daftarLaguSayaResponseSchema, {
+      signal: controller.signal,
+    })
+      .then((body) => {
+        setLagu(body.data);
         setStatus("siap");
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (!controller.signal.aborted) {
-          setPesan("Tidak bisa memuat Lagu Saya. Coba lagi.");
+          setPesan(
+            pesanDariError(error, "Tidak bisa memuat Lagu Saya. Coba lagi."),
+          );
           setStatus("gagal");
         }
       });

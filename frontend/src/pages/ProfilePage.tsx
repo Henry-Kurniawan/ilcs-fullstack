@@ -4,7 +4,7 @@ import {
   ubahPasswordRequestSchema,
   updateProfilRequestSchema,
 } from "@musicpedia/shared";
-import { pesanKesalahan } from "../api.ts";
+import { apiFetch, pesanDariError } from "../api.ts";
 import { useAuth } from "../auth/AuthContext.tsx";
 
 const kelasInput = "mt-1 w-full rounded-md border border-slate-300 px-3 py-2";
@@ -41,19 +41,17 @@ export function ProfilePage() {
 
     setMenyimpanProfil(true);
     try {
-      const res = await fetch("/api/profil", {
+      await apiFetch("/api/profil", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(parsed.data),
       });
-      if (!res.ok) {
-        setPesanProfil(await pesanKesalahan(res));
-        return;
-      }
       await refresh();
       setPesanProfil("Profil tersimpan.");
-    } catch {
-      setPesanProfil("Tidak bisa menghubungi server. Coba lagi.");
+    } catch (error) {
+      setPesanProfil(
+        pesanDariError(error, "Tidak bisa menghubungi server. Coba lagi."),
+      );
     } finally {
       setMenyimpanProfil(false);
     }
@@ -73,19 +71,17 @@ export function ProfilePage() {
 
     setMenggantiPassword(true);
     try {
-      const res = await fetch("/api/profil/password", {
+      await apiFetch("/api/profil/password", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(parsed.data),
       });
-      if (!res.ok) {
-        setPesanPassword(await pesanKesalahan(res));
-        return;
-      }
       form.reset();
       setPesanPassword("Kata sandi berhasil diganti.");
-    } catch {
-      setPesanPassword("Tidak bisa menghubungi server. Coba lagi.");
+    } catch (error) {
+      setPesanPassword(
+        pesanDariError(error, "Tidak bisa menghubungi server. Coba lagi."),
+      );
     } finally {
       setMenggantiPassword(false);
     }

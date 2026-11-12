@@ -8,6 +8,7 @@ import {
   type Genre,
   type UrutanLagu,
 } from "@musicpedia/shared";
+import { apiJson } from "./api.ts";
 import { formatRupiah, formatTanggal } from "./format.ts";
 import { TambahKeranjangButton } from "./components/TambahKeranjangButton.tsx";
 
@@ -25,12 +26,10 @@ export function KatalogPage() {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch("/api/genre", { signal: controller.signal })
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then((body) => setGenreList(daftarGenreResponseSchema.parse(body).data))
+    apiJson("/api/genre", daftarGenreResponseSchema, {
+      signal: controller.signal,
+    })
+      .then((body) => setGenreList(body.data))
       .catch(() => {
         if (!controller.signal.aborted) setGenreList([]);
       });
@@ -46,13 +45,11 @@ export function KatalogPage() {
     params.set("halaman", String(halaman));
 
     setStatus("memuat");
-    fetch(`/api/lagu?${params.toString()}`, { signal: controller.signal })
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
+    apiJson(`/api/lagu?${params.toString()}`, daftarLaguResponseSchema, {
+      signal: controller.signal,
+    })
       .then((body) => {
-        setHasil(daftarLaguResponseSchema.parse(body));
+        setHasil(body);
         setStatus("siap");
       })
       .catch(() => {

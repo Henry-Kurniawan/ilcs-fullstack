@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { daftarGenreResponseSchema, type Genre } from "@musicpedia/shared";
-import { pesanKesalahan } from "../api.ts";
+import { apiFetch, apiJson, pesanDariError } from "../api.ts";
 import { NavigasiAdmin } from "./NavigasiAdmin.tsx";
 
 type Status = "memuat" | "siap" | "gagal";
@@ -20,9 +20,8 @@ export function AdminGenrePage() {
   const muat = useCallback(async () => {
     setStatus("memuat");
     try {
-      const res = await fetch("/api/genre");
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setDaftar(daftarGenreResponseSchema.parse(await res.json()).data);
+      const body = await apiJson("/api/genre", daftarGenreResponseSchema);
+      setDaftar(body.data);
       setStatus("siap");
     } catch {
       setStatus("gagal");
@@ -38,19 +37,17 @@ export function AdminGenrePage() {
     setPesan(null);
     setMengirim(true);
     try {
-      const res = await fetch("/api/admin/genre", {
+      await apiFetch("/api/admin/genre", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nama: namaBaru }),
       });
-      if (!res.ok) {
-        setPesan(await pesanKesalahan(res));
-        return;
-      }
       setNamaBaru("");
       await muat();
-    } catch {
-      setPesan("Tidak bisa menghubungi server. Coba lagi.");
+    } catch (error) {
+      setPesan(
+        pesanDariError(error, "Tidak bisa menghubungi server. Coba lagi."),
+      );
     } finally {
       setMengirim(false);
     }
@@ -60,20 +57,18 @@ export function AdminGenrePage() {
     setPesan(null);
     setMengirim(true);
     try {
-      const res = await fetch(`/api/admin/genre/${id}`, {
+      await apiFetch(`/api/admin/genre/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nama: namaEdit }),
       });
-      if (!res.ok) {
-        setPesan(await pesanKesalahan(res));
-        return;
-      }
       setEditId(null);
       setNamaEdit("");
       await muat();
-    } catch {
-      setPesan("Tidak bisa menghubungi server. Coba lagi.");
+    } catch (error) {
+      setPesan(
+        pesanDariError(error, "Tidak bisa menghubungi server. Coba lagi."),
+      );
     } finally {
       setMengirim(false);
     }
@@ -83,16 +78,14 @@ export function AdminGenrePage() {
     if (!window.confirm(`Hapus genre "${genre.nama}"?`)) return;
     setPesan(null);
     try {
-      const res = await fetch(`/api/admin/genre/${genre.id}`, {
+      await apiFetch(`/api/admin/genre/${genre.id}`, {
         method: "DELETE",
       });
-      if (!res.ok) {
-        setPesan(await pesanKesalahan(res));
-        return;
-      }
       await muat();
-    } catch {
-      setPesan("Tidak bisa menghubungi server. Coba lagi.");
+    } catch (error) {
+      setPesan(
+        pesanDariError(error, "Tidak bisa menghubungi server. Coba lagi."),
+      );
     }
   }
 

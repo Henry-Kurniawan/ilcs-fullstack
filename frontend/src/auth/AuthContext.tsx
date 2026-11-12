@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import { meResponseSchema, type Akun } from "@musicpedia/shared";
+import { apiFetch, apiJson } from "../api.ts";
 
 interface AuthState {
   akun: Akun | null;
@@ -23,9 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refresh = useCallback(async () => {
     try {
-      const res = await fetch("/api/auth/me");
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const body = meResponseSchema.parse(await res.json());
+      const body = await apiJson("/api/auth/me", meResponseSchema);
       setAkun(body.akun);
     } catch {
       setAkun(null);
@@ -39,7 +38,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [refresh]);
 
   const logout = useCallback(async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
+    try {
+      await apiFetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      // Sesi lokal tetap dibersihkan walau server tidak dapat dihubungi.
+    }
     setAkun(null);
   }, []);
 

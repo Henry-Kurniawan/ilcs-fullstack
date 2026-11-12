@@ -7,7 +7,7 @@ import {
   type DaftarPelangganResponse,
   type Pelanggan,
 } from "@musicpedia/shared";
-import { pesanKesalahan } from "../api.ts";
+import { apiJson, pesanDariError } from "../api.ts";
 import { useAuth } from "../auth/AuthContext.tsx";
 
 type Status = "memuat" | "siap" | "gagal";
@@ -34,15 +34,13 @@ export function AdminPelangganPage() {
     if (cari) params.set("cari", cari);
 
     setStatus("memuat");
-    fetch(`/api/admin/pelanggan?${params.toString()}`, {
-      signal: controller.signal,
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
+    apiJson(
+      `/api/admin/pelanggan?${params.toString()}`,
+      daftarPelangganResponseSchema,
+      { signal: controller.signal },
+    )
       .then((body) => {
-        setHasil(daftarPelangganResponseSchema.parse(body));
+        setHasil(body);
         setStatus("siap");
       })
       .catch(() => {
@@ -96,21 +94,22 @@ export function AdminPelangganPage() {
 
     setMenyimpan(true);
     try {
-      const res = await fetch(`/api/admin/pelanggan/${sunting.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(parsed.data),
-      });
-      if (!res.ok) {
-        setPesan(await pesanKesalahan(res));
-        return;
-      }
-      const body = pelangganResponseSchema.parse(await res.json());
+      const body = await apiJson(
+        `/api/admin/pelanggan/${sunting.id}`,
+        pelangganResponseSchema,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(parsed.data),
+        },
+      );
       perbaruiBaris(body.data);
       setSunting(null);
       setPesan("Data Pelanggan tersimpan.");
-    } catch {
-      setPesan("Tidak bisa menghubungi server. Coba lagi.");
+    } catch (error) {
+      setPesan(
+        pesanDariError(error, "Tidak bisa menghubungi server. Coba lagi."),
+      );
     } finally {
       setMenyimpan(false);
     }
@@ -120,27 +119,25 @@ export function AdminPelangganPage() {
     setPesan(null);
     setMemprosesId(pelanggan.id);
     try {
-      const res = await fetch(
+      const body = await apiJson(
         `/api/admin/pelanggan/${pelanggan.id}/aktif`,
+        pelangganResponseSchema,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ aktif }),
         },
       );
-      if (!res.ok) {
-        setPesan(await pesanKesalahan(res));
-        return;
-      }
-      const data = pelangganResponseSchema.parse(await res.json()).data;
-      perbaruiBaris(data);
+      perbaruiBaris(body.data);
       setPesan(
         aktif
           ? "Pelanggan diaktifkan kembali."
           : "Pelanggan dinonaktifkan dan sesinya langsung berhenti berlaku.",
       );
-    } catch {
-      setPesan("Tidak bisa menghubungi server. Coba lagi.");
+    } catch (error) {
+      setPesan(
+        pesanDariError(error, "Tidak bisa menghubungi server. Coba lagi."),
+      );
     } finally {
       setMemprosesId(null);
     }

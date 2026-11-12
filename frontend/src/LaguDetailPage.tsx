@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import { laguResponseSchema, type Lagu } from "@musicpedia/shared";
+import { apiJson, KesalahanApi } from "./api.ts";
 import { formatRupiah, formatTanggal } from "./format.ts";
 import { TambahKeranjangButton } from "./components/TambahKeranjangButton.tsx";
 
@@ -15,22 +16,20 @@ export function LaguDetailPage() {
   useEffect(() => {
     const controller = new AbortController();
     setStatus("memuat");
-    fetch(`/api/lagu/${id ?? ""}`, { signal: controller.signal })
-      .then((res) => {
-        if (res.status === 404) {
-          setStatus("tidak-ada");
-          return null;
-        }
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
+    apiJson(`/api/lagu/${id ?? ""}`, laguResponseSchema, {
+      signal: controller.signal,
+    })
       .then((body) => {
-        if (body === null) return;
-        setLagu(laguResponseSchema.parse(body).data);
+        setLagu(body.data);
         setStatus("siap");
       })
-      .catch(() => {
-        if (!controller.signal.aborted) setStatus("gagal");
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return;
+        if (error instanceof KesalahanApi && error.status === 404) {
+          setStatus("tidak-ada");
+          return;
+        }
+        setStatus("gagal");
       });
     return () => controller.abort();
   }, [id]);

@@ -1,4 +1,5 @@
 import { konfigurasiResponseSchema } from "@musicpedia/shared";
+import { apiJson } from "../api.ts";
 
 export interface OpsiSnap {
   onSuccess?: (hasil?: unknown) => void;
@@ -20,11 +21,11 @@ declare global {
 let snapSiap: Promise<SnapGlobal> | null = null;
 
 async function ambilKonfigurasi() {
-  const res = await fetch("/api/konfigurasi");
-  if (!res.ok) {
+  try {
+    return await apiJson("/api/konfigurasi", konfigurasiResponseSchema);
+  } catch {
     throw new Error("Konfigurasi pembayaran tidak tersedia.");
   }
-  return konfigurasiResponseSchema.parse(await res.json());
 }
 
 function muatSkrip(url: string, clientKey: string): Promise<void> {

@@ -4,7 +4,7 @@ import {
   daftarLaguAdminResponseSchema,
   type LaguAdmin,
 } from "@musicpedia/shared";
-import { pesanKesalahan } from "../api.ts";
+import { apiFetch, apiJson, pesanDariError } from "../api.ts";
 import { formatRupiah, formatTanggal } from "../format.ts";
 import { NavigasiAdmin } from "./NavigasiAdmin.tsx";
 
@@ -18,9 +18,11 @@ export function AdminLaguPage() {
   const muat = useCallback(async () => {
     setStatus("memuat");
     try {
-      const res = await fetch("/api/admin/lagu?ukuran=200");
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setDaftar(daftarLaguAdminResponseSchema.parse(await res.json()).data);
+      const body = await apiJson(
+        "/api/admin/lagu?ukuran=200",
+        daftarLaguAdminResponseSchema,
+      );
+      setDaftar(body.data);
       setStatus("siap");
     } catch {
       setStatus("gagal");
@@ -34,18 +36,16 @@ export function AdminLaguPage() {
   async function ubahTersembunyi(lagu: LaguAdmin) {
     setPesan(null);
     try {
-      const res = await fetch(`/api/admin/lagu/${lagu.id}/tersembunyi`, {
+      await apiFetch(`/api/admin/lagu/${lagu.id}/tersembunyi`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tersembunyi: !lagu.tersembunyi }),
       });
-      if (!res.ok) {
-        setPesan(await pesanKesalahan(res));
-        return;
-      }
       await muat();
-    } catch {
-      setPesan("Tidak bisa menghubungi server. Coba lagi.");
+    } catch (error) {
+      setPesan(
+        pesanDariError(error, "Tidak bisa menghubungi server. Coba lagi."),
+      );
     }
   }
 
@@ -59,16 +59,14 @@ export function AdminLaguPage() {
     }
     setPesan(null);
     try {
-      const res = await fetch(`/api/admin/lagu/${lagu.id}`, {
+      await apiFetch(`/api/admin/lagu/${lagu.id}`, {
         method: "DELETE",
       });
-      if (!res.ok) {
-        setPesan(await pesanKesalahan(res));
-        return;
-      }
       await muat();
-    } catch {
-      setPesan("Tidak bisa menghubungi server. Coba lagi.");
+    } catch (error) {
+      setPesan(
+        pesanDariError(error, "Tidak bisa menghubungi server. Coba lagi."),
+      );
     }
   }
 
