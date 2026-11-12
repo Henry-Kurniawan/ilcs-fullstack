@@ -2,6 +2,7 @@ import express from "express";
 import type { HealthResponse } from "@musicpedia/shared";
 import type { Config } from "./config.ts";
 import type { Pool } from "./db.ts";
+import { katalogRouter } from "./katalog/controller.ts";
 
 export interface AppDeps {
   pool: Pool;
@@ -17,6 +18,8 @@ export function createApp({ pool }: AppDeps) {
     const body: HealthResponse = { status: "ok", database: "up" };
     res.json(body);
   });
+
+  app.use("/api", katalogRouter(pool));
 
   return app;
 }
