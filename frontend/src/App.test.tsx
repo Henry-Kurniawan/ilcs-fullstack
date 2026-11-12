@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { afterEach, expect, it, vi } from "vitest";
 import { App } from "./App.tsx";
@@ -37,19 +37,23 @@ function stubFetch(akun: AkunUji | null = null) {
       const url = String(input);
       const body = url.startsWith("/api/auth/me")
         ? { akun }
-        : url.startsWith("/api/genre")
-          ? { data: [lagu.genre] }
-          : url.startsWith("/api/admin/pelanggan")
-            ? {
-                data: [pelanggan],
-                meta: { halaman: 1, ukuran: 20, total: 1, totalHalaman: 1 },
-              }
-            : url === `/api/lagu/${lagu.id}`
-              ? { data: lagu }
-              : {
-                  data: [lagu],
-                  meta: { halaman: 1, ukuran: 12, total: 1, totalHalaman: 1 },
-                };
+        : url.startsWith("/api/keranjang")
+          ? {
+              data: { items: [lagu], total: lagu.harga, jumlah: 1 },
+            }
+          : url.startsWith("/api/genre")
+            ? { data: [lagu.genre] }
+            : url.startsWith("/api/admin/pelanggan")
+              ? {
+                  data: [pelanggan],
+                  meta: { halaman: 1, ukuran: 20, total: 1, totalHalaman: 1 },
+                }
+              : url === `/api/lagu/${lagu.id}`
+                ? { data: lagu }
+                : {
+                    data: [lagu],
+                    meta: { halaman: 1, ukuran: 12, total: 1, totalHalaman: 1 },
+                  };
       return { ok: true, status: 200, json: async () => body } as Response;
     }),
   );
@@ -128,6 +132,52 @@ it("menampilkan email dan tombol keluar saat Pelanggan sudah masuk", async () =>
   expect(screen.getByRole("button", { name: "Keluar" })).toBeTruthy();
 });
 
+it("menampilkan jumlah Lagu di indikator Keranjang pada header", async () => {
+  stubFetch({
+    id: 1,
+    email: "siti@example.com",
+    nama: "Siti Rahma",
+    peran: "PELANGGAN",
+    aktif: true,
+  });
+  renderRute("/");
+
+  expect(
+    await screen.findByRole("link", { name: "Keranjang, 1 Lagu" }),
+  ).toBeTruthy();
+});
+
+it("menampilkan halaman Keranjang Pelanggan", async () => {
+  stubFetch({
+    id: 1,
+    email: "siti@example.com",
+    nama: "Siti Rahma",
+    peran: "PELANGGAN",
+    aktif: true,
+  });
+  renderRute("/keranjang");
+
+  expect(
+    await screen.findByRole("heading", { name: "Keranjang" }),
+  ).toBeTruthy();
+  expect(await screen.findByText("Cahaya Pagi")).toBeTruthy();
+  expect(screen.getByText("Rina Prasetya")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Hapus" })).toBeTruthy();
+  expect(screen.getByText(/^Total/).textContent).toContain("25.000");
+});
+
+it("mengarahkan Pengunjung ke login saat menambah Lagu ke Keranjang", async () => {
+  stubFetch(null);
+  renderRute("/");
+
+  const tombol = await screen.findByRole("button", {
+    name: "Tambah ke Keranjang",
+  });
+  fireEvent.click(tombol);
+
+  expect(await screen.findByRole("heading", { name: "Masuk" })).toBeTruthy();
+});
+
 it("menampilkan halaman profil Pelanggan", async () => {
   stubFetch({
     id: 1,
@@ -146,7 +196,6 @@ it("menampilkan halaman profil Pelanggan", async () => {
   expect(screen.getByLabelText("Kata sandi baru")).toBeTruthy();
   expect(screen.getByRole("button", { name: "Ganti kata sandi" })).toBeTruthy();
 });
-
 it("menampilkan area Admin Pelanggan bagi Admin", async () => {
   stubFetch({
     id: 1,
@@ -179,4 +228,3 @@ it("mengalihkan Pelanggan yang membuka area Admin", async () => {
     await screen.findByRole("heading", { name: "Katalog Lagu" }),
   ).toBeTruthy();
 });
-

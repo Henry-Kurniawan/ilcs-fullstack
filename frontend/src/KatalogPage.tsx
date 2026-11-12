@@ -9,6 +9,7 @@ import {
   type UrutanLagu,
 } from "@musicpedia/shared";
 import { formatRupiah, formatTanggal } from "./format.ts";
+import { TambahKeranjangButton } from "./components/TambahKeranjangButton.tsx";
 
 type Status = "memuat" | "siap" | "gagal";
 
@@ -179,6 +180,7 @@ export function KatalogPage() {
                       {formatRupiah(lagu.harga)}
                     </span>
                   </div>
+                  <TambahKeranjangButton laguId={lagu.id} ringkas />
                 </article>
               </li>
             ))}
