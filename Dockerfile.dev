@@ -1,0 +1,26 @@
+FROM node:26-alpine
+
+# ffmpeg dipakai seed dan unggahan Admin untuk validasi mp3 dan membuat Trial.
+# Dipasang di image supaya pengembangan tidak membutuhkan ffmpeg di host.
+RUN apk add --no-cache ffmpeg
+
+WORKDIR /app
+
+# Dependensi dipasang di dalam image, lalu node_modules ditutupi volume anonim
+# saat compose me-mount repo. Biner native (esbuild, rollup, tailwind) dibangun
+# untuk Alpine, jadi node_modules milik host tidak pernah dipakai.
+COPY package.json package-lock.json ./
+COPY shared/package.json shared/
+COPY backend/package.json backend/
+COPY frontend/package.json frontend/
+RUN npm ci && npm cache clean --force
+
+COPY tsconfig.base.json ./
+COPY shared ./shared
+COPY backend ./backend
+COPY frontend ./frontend
+
+ENV FFMPEG_PATH=/usr/bin/ffmpeg
+ENV AUDIO_DIR=/app/backend/audio
+
+EXPOSE 3000 5173

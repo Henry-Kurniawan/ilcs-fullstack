@@ -30,15 +30,6 @@ beforeEach(async () => {
   await pool.query("DELETE FROM genre");
 });
 
-function tanggalHariIni(): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Jakarta",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
-
 async function masuk(email: string, password: string) {
   const agen = request.agent(app);
   await agen.post("/api/auth/login").send({ email, password }).expect(200);
@@ -331,13 +322,21 @@ describe("seed Data Demo", () => {
   });
 
   it("menampilkan baris Laporan Penjualan dari Pembelian Lunas Data Demo", { timeout: 120_000 }, async () => {
-    await jalankanSeed(pool, ctx.config, () => {});
+    // Tanggal seed dipatok supaya "hari ini" tidak bergeser saat tes berjalan
+    // dini hari: Pembelian Data Demo dibuat beberapa jam sebelum waktu seed.
+    const waktuSeed = new Date("2026-05-15T09:00:00.000Z");
+    await jalankanSeed(pool, ctx.config, () => {}, waktuSeed);
 
     const admin = await masuk(ctx.config.adminEmail, ctx.config.adminPassword);
-    const hariIni = tanggalHariIni();
+    const hariDemo = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Jakarta",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(waktuSeed);
     const laporanRes = await admin
       .get("/api/admin/laporan")
-      .query({ dari: hariIni, sampai: hariIni })
+      .query({ dari: hariDemo, sampai: hariDemo })
       .expect(200);
     const laporan = laporanResponseSchema.parse(laporanRes.body);
 

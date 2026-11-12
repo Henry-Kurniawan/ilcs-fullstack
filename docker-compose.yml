@@ -17,5 +17,72 @@ services:
       timeout: 3s
       retries: 20
 
+  # Dua service di bawah berbagi satu image pengembangan. Repo di-mount supaya
+  # perubahan berkas langsung terlihat, sedangkan node_modules tetap milik image
+  # (volume anonim, diperbarui oleh `-V` di npm run dev) karena biner native
+  # Alpine berbeda dengan milik host.
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command:
+      ["sh", "-c", "node backend/src/migrate.ts && exec npm run dev --workspace backend"]
+    # .env opsional: nilainya hanya melengkapi environment di bawah.
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      NODE_ENV: development
+      PORT: "3000"
+      DATABASE_URL: postgres://musicpedia:musicpedia@db:5432/musicpedia
+      AUDIO_DIR: /app/backend/audio
+      FFMPEG_PATH: /usr/bin/ffmpeg
+      # Dipakai helper tes untuk membaca durasi Trial.
+      FFPROBE_PATH: /usr/bin/ffprobe
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/backend/node_modules
+      - /app/shared/node_modules
+      - /app/frontend/node_modules
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: ["npm", "run", "dev", "--workspace", "frontend", "--", "--host", "0.0.0.0"]
+    environment:
+      API_PROXY_TARGET: http://backend:3000
+      # Bind mount tidak meneruskan event inotify di Docker Desktop. Setel
+      # VITE_USE_POLLING=true di lingkungan host bila perubahan tidak terdeteksi.
+      VITE_USE_POLLING: ${VITE_USE_POLLING:-false}
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/backend/node_modules
+      - /app/shared/node_modules
+      - /app/frontend/node_modules
+    depends_on:
+      - backend
+
+  dockscope:
+    image: ghcr.io/manuelr-t/dockscope
+    container_name: dockscope
+    restart: unless-stopped
+    profiles: [tools]
+    ports:
+      - "4681:4681"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - dockscope-data:/data
+
 volumes:
   pgdata:
+  dockscope-data:
