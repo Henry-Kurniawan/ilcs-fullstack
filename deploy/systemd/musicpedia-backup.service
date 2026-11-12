@@ -1,0 +1,15 @@
+[Unit]
+Description=Backup harian MusicPedia (PostgreSQL + audio)
+Documentation=file:///opt/musicpedia/README.md
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+# Sesuaikan User dan WorkingDirectory dengan pemilik repo di server.
+User=musicpedia
+WorkingDirectory=/opt/musicpedia
+Environment=ENV_FILE=/opt/musicpedia/.env.production
+ExecStart=/opt/musicpedia/scripts/backup.sh
+Nice=10
+IOSchedulingClass=idle

@@ -11,7 +11,7 @@ Trial disajikan oleh endpoint publik `GET /api/lagu/:id/trial`. Endpoint ini men
 - Menyimpan path di database menjaga satu sumber kebenaran: Lagu yang Trial-nya belum dibuat cukup memiliki `file_trial` kosong, dan endpoint Trial menjawab 404.
 - ffmpeg adalah pemeriksa format yang sebenarnya. Mempercayai ekstensi atau `Content-Type` dari browser tidak cukup karena keduanya mudah dipalsukan.
 - Range wajib untuk pengalaman pemutar audio di browser: tanpa Range, Safari dan sebagian pemutar tidak bisa melompat ke tengah Trial.
-- Image backend memasang paket `ffmpeg` dari Debian, sehingga biner yang dipakai produksi sama dengan yang dipakai tes.
+- Image backend memasang paket `ffmpeg` dari distribusi image (Alpine pada image produksi), sehingga biner yang dipakai produksi tidak bergantung pada host dan tetap bisa dipakai membuat Trial.
 
 ## Considered Options
 - **Menyimpan audio sebagai BLOB di PostgreSQL.** Ditolak karena database membengkak dan backup harian menjadi berat; PostgreSQL bukan tempat yang tepat untuk berkas besar yang disajikan berulang kali.
