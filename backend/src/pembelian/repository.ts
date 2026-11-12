@@ -197,6 +197,37 @@ function kePembelian(baris: BarisRiwayat[]): Pembelian {
   };
 }
 
+export type StatusAkhirPembelian = Exclude<
+  StatusPembelian,
+  "MENUNGGU_PEMBAYARAN"
+>;
+
+/**
+ * Transisi status Pembelian yang hanya berlaku dari Menunggu Pembayaran.
+ * Dipakai webhook: notifikasi ganda atau notifikasi terlambat setelah Pembelian
+ * Gagal tidak mengubah apa pun. `dibayar_pada` hanya diisi saat menjadi Lunas.
+ *
+ * Mengembalikan true bila baris benar-benar berubah.
+ */
+export async function transisiPembelian(
+  db: Db,
+  pembelianId: number,
+  statusBaru: StatusAkhirPembelian,
+  dibayarPada: Date | null = null,
+): Promise<boolean> {
+  const { rowCount } = await db.query(
+    `UPDATE pembelian
+     SET status = $2,
+         dibayar_pada = CASE
+           WHEN $2 = 'LUNAS' THEN COALESCE($3::timestamptz, now())
+           ELSE dibayar_pada
+         END
+     WHERE id = $1 AND status = 'MENUNGGU_PEMBAYARAN'`,
+    [pembelianId, statusBaru, dibayarPada],
+  );
+  return (rowCount ?? 0) > 0;
+}
+
 export async function daftarPembelian(
   pool: Pool,
   pelangganId: number,
