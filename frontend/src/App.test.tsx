@@ -117,7 +117,7 @@ it("menampilkan email dan tombol keluar saat Pelanggan sudah masuk", async () =>
 });
 
 it("menampilkan halaman profil Pelanggan", async () => {
-  stubSesi({
+  stubFetch({
     id: 1,
     email: "siti@example.com",
     nama: "Siti Rahma",
