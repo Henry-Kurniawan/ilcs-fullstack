@@ -21,16 +21,7 @@ export interface KeranjangRepository {
   ): Promise<StatusPembelianLagu>;
 }
 
-async function tabelPembelianAda(pool: Pool): Promise<boolean> {
-  const { rows } = await pool.query<{ ada: boolean }>(
-    `SELECT to_regclass('public.pembelian') IS NOT NULL
-        AND to_regclass('public.item_pembelian') IS NOT NULL AS ada`,
-  );
-  return rows[0]?.ada ?? false;
-}
-
-export function createKeranjangRepository(pool: Pool): KeranjangRepository {
-  return {
+export function createKeranjangRepository(pool: Pool): KeranjangRepository {  return {
     async daftar(pelangganId) {
       // Lagu yang disembunyikan Admin tidak lagi bisa dibeli, jadi tidak
       // ditampilkan sebagai bagian Keranjang.
@@ -63,12 +54,6 @@ export function createKeranjangRepository(pool: Pool): KeranjangRepository {
     },
 
     async statusPembelian(pelangganId, laguId) {
-      // Tabel pembelian/item_pembelian baru ada setelah ticket #9. Sampai itu,
-      // tidak ada Lagu yang dimiliki maupun sedang dibayar.
-      if (!(await tabelPembelianAda(pool))) {
-        return { dimiliki: false, menungguPembayaran: false };
-      }
-
       const { rows } = await pool.query<{
         lunas: boolean | null;
         menunggu: boolean | null;

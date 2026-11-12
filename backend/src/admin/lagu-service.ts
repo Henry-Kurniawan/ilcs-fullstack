@@ -186,7 +186,7 @@ export function createLaguAdminService({
         throw new AppError(
           409,
           "KONFLIK",
-          "Lagu yang pernah terjual tidak bisa dihapus.",
+          "Lagu yang sudah ada di Pembelian tidak bisa dihapus. Sembunyikan Lagu ini sebagai gantinya.",
         );
       }
       await hapusFileAudio(audioDir, [berkas?.fileMp3, berkas?.fileTrial]);

@@ -10,6 +10,9 @@ export interface Config {
   adminPassword: string;
   audioDir: string;
   ffmpegPath: string;
+  midtransServerKey: string;
+  midtransClientKey: string;
+  midtransProduction: boolean;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -38,5 +41,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     adminPassword: env.ADMIN_PASSWORD ?? "admin12345",
     audioDir: path.resolve(env.AUDIO_DIR ?? "audio"),
     ffmpegPath: env.FFMPEG_PATH ?? "ffmpeg",
+    midtransServerKey: env.MIDTRANS_SERVER_KEY ?? "",
+    midtransClientKey: env.MIDTRANS_CLIENT_KEY ?? "",
+    midtransProduction: env.MIDTRANS_PRODUCTION === "true",
   };
 }

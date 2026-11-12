@@ -264,6 +264,36 @@ describe("Admin menghapus Lagu", () => {
     await agent.get(`/api/admin/lagu/${lagu.id}`).expect(404);
     await request(app).get(`/api/lagu/${lagu.id}`).expect(404);
   });
+
+  it("menolak menghapus Lagu yang sudah ada di Item Pembelian dan menyarankan menyembunyikan", async () => {
+    const agent = await masukAdmin();
+    const lagu = laguAdminResponseSchema.parse(
+      (await kirimTambahLagu(agent, await buatGenreDb()).expect(201)).body,
+    ).data;
+
+    const { rows: akun } = await pool.query<{ id: number }>(
+      "SELECT id FROM akun WHERE email = $1",
+      [admin.email],
+    );
+    const { rows: pembelian } = await pool.query<{ id: number }>(
+      `INSERT INTO pembelian (pelanggan_id, status, total)
+       VALUES ($1, 'LUNAS', 25000)
+       RETURNING id`,
+      [akun[0]!.id],
+    );
+    await pool.query(
+      `INSERT INTO item_pembelian (pembelian_id, lagu_id, harga)
+       VALUES ($1, $2, 25000)`,
+      [pembelian[0]!.id, lagu.id],
+    );
+
+    const res = await agent.delete(`/api/admin/lagu/${lagu.id}`).expect(409);
+    const body = errorResponseSchema.parse(res.body);
+    expect(body.code).toBe("KONFLIK");
+    expect(body.error).toContain("Sembunyikan");
+
+    await agent.get(`/api/admin/lagu/${lagu.id}`).expect(200);
+  });
 });
 
 describe("Trial Lagu", () => {
