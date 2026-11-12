@@ -87,6 +87,8 @@ function stubFetch(akun: AkunUji | null = null) {
               }
             : url.startsWith("/api/pembelian")
               ? { data: pembelianUji }
+              : url.startsWith("/api/lagu-saya")
+              ? { data: [lagu] }
               : url.startsWith("/api/konfigurasi")
                 ? {
                     midtransClientKey: "client-publik",
@@ -327,4 +329,24 @@ it("mengalihkan Pelanggan yang membuka area Admin", async () => {
   expect(
     await screen.findByRole("heading", { name: "Katalog Lagu" }),
   ).toBeTruthy();
+});
+
+it("menampilkan halaman Lagu Saya dengan tombol unduh", async () => {
+  stubFetch({
+    id: 1,
+    email: "siti@example.com",
+    nama: "Siti Rahma",
+    peran: "PELANGGAN",
+    aktif: true,
+  });
+  renderRute("/lagu-saya");
+
+  expect(
+    await screen.findByRole("heading", { name: "Lagu Saya" }),
+  ).toBeTruthy();
+  expect(await screen.findByText("Cahaya Pagi")).toBeTruthy();
+  expect(screen.getByText("Rina Prasetya")).toBeTruthy();
+
+  const unduh = screen.getByRole("link", { name: "Unduh mp3" });
+  expect(unduh.getAttribute("href")).toBe(`/api/lagu/${lagu.id}/unduh`);
 });
