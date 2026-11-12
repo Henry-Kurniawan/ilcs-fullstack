@@ -8,17 +8,10 @@ import {
   tersembunyiLaguRequestSchema,
 } from "@musicpedia/shared";
 import { AppError } from "../errors.ts";
+import { ambilId } from "../http.ts";
 import { createUploadAudio } from "../media/upload.ts";
 import type { GenreAdminService } from "./genre-service.ts";
 import type { LaguAdminService } from "./lagu-service.ts";
-
-function ambilId(req: Request): number {
-  const id = Number(req.params.id);
-  if (!Number.isInteger(id) || id <= 0) {
-    throw new AppError(400, "VALIDASI", "Id tidak valid.");
-  }
-  return id;
-}
 
 function pesanValidasi(error: { issues: Array<{ message: string }> }): string {
   return error.issues[0]?.message ?? "Data tidak valid.";

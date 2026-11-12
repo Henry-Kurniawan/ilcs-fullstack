@@ -2,6 +2,7 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import { daftarLaguQuerySchema } from "@musicpedia/shared";
 import { AppError } from "../errors.ts";
+import { ambilId } from "../http.ts";
 import { pathAudio } from "../media/audio.ts";
 import { kirimAudio } from "../media/trial.ts";
 import type { KatalogService } from "./service.ts";
@@ -9,14 +10,6 @@ import type { KatalogService } from "./service.ts";
 export interface KatalogControllerDeps {
   service: KatalogService;
   audioDir: string;
-}
-
-function ambilIdLagu(nilai: string): number {
-  const id = Number(nilai);
-  if (!Number.isInteger(id) || id <= 0) {
-    throw new AppError(400, "VALIDASI", "Id Lagu tidak valid.");
-  }
-  return id;
 }
 
 export interface KatalogController {
@@ -44,7 +37,7 @@ export function createKatalogController({
     },
 
     async trial(req, res) {
-      const id = ambilIdLagu(String(req.params.id));
+      const id = ambilId(req, "Id Lagu tidak valid.");
       const fileTrial = await service.fileTrial(id);
       if (!fileTrial) {
         throw new AppError(
@@ -69,7 +62,7 @@ export function createKatalogController({
     },
 
     async detail(req, res) {
-      const id = ambilIdLagu(String(req.params.id));
+      const id = ambilId(req, "Id Lagu tidak valid.");
       const lagu = await service.detailLagu(id);
       if (!lagu) {
         throw new AppError(404, "TIDAK_DITEMUKAN", "Lagu tidak ditemukan.");
