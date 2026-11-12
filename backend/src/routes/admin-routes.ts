@@ -7,6 +7,8 @@ import {
 import { createGenreAdminService } from "../admin/genre-service.ts";
 import { createLaguAdminService } from "../admin/lagu-service.ts";
 import type { Pool } from "../db.ts";
+import { createLaporanController } from "../laporan/controller.ts";
+import { createLaporanService } from "../laporan/service.ts";
 import type { createAuthMiddleware } from "../middleware/auth.ts";
 import type { PelangganController } from "../pelanggan/controller.ts";
 import { createAdminPelangganRouter } from "../pelanggan/routes.ts";
@@ -36,6 +38,7 @@ export function createAdminRouter({
     config.audioDir,
   );
   const genre = createGenreAdminController(createGenreAdminService(pool));
+  const laporan = createLaporanController(createLaporanService(pool));
 
   router.get("/ping", (_req, res) => {
     res.json({ status: "ok" });
@@ -56,6 +59,10 @@ export function createAdminRouter({
   router.post("/genre", genre.tambah);
   router.patch("/genre/:id", genre.ubah);
   router.delete("/genre/:id", genre.hapus);
+
+  router.get("/laporan", laporan.laporan);
+  router.get("/laporan/pdf", laporan.pdf);
+  router.get("/laporan/excel", laporan.excel);
 
   return router;
 }

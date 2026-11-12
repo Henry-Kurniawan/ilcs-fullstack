@@ -388,3 +388,37 @@ export const konfigurasiResponseSchema = z.object({
 });
 
 export type KonfigurasiResponse = z.infer<typeof konfigurasiResponseSchema>;
+
+const tanggalLaporanSchema = z.iso.date({ message: "Tanggal tidak valid." });
+
+export const laporanQuerySchema = z
+  .strictObject({
+    dari: tanggalLaporanSchema,
+    sampai: tanggalLaporanSchema,
+  })
+  .refine((data) => data.dari <= data.sampai, {
+    message: "Tanggal awal tidak boleh melewati tanggal akhir.",
+    path: ["dari"],
+  });
+
+export type LaporanQuery = z.infer<typeof laporanQuerySchema>;
+
+export const barisLaporanSchema = z.object({
+  pembelianId: z.number().int().positive(),
+  tanggalBayar: z.iso.datetime(),
+  judul: z.string().min(1),
+  artis: z.string().min(1),
+  pelanggan: z.string().min(1),
+  harga: z.number().int().nonnegative(),
+});
+
+export type BarisLaporan = z.infer<typeof barisLaporanSchema>;
+
+export const laporanResponseSchema = z.object({
+  dari: z.iso.date(),
+  sampai: z.iso.date(),
+  total: z.number().int().nonnegative(),
+  data: z.array(barisLaporanSchema),
+});
+
+export type LaporanResponse = z.infer<typeof laporanResponseSchema>;
