@@ -10,7 +10,7 @@ import { useAuth } from "../auth/AuthContext.tsx";
 const kelasInput = "mt-1 w-full rounded-md border border-slate-300 px-3 py-2";
 
 export function ProfilePage() {
-  const { akun, memuat, refresh } = useAuth();
+  const { akun, memuat, segarkan } = useAuth();
   const [pesanProfil, setPesanProfil] = useState<string | null>(null);
   const [pesanPassword, setPesanPassword] = useState<string | null>(null);
   const [menyimpanProfil, setMenyimpanProfil] = useState(false);
@@ -46,7 +46,7 @@ export function ProfilePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(parsed.data),
       });
-      await refresh();
+      await segarkan();
       setPesanProfil("Profil tersimpan.");
     } catch (error) {
       setPesanProfil(

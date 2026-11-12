@@ -12,8 +12,8 @@ import { apiFetch, apiJson } from "../api.ts";
 interface AuthState {
   akun: Akun | null;
   memuat: boolean;
-  refresh: () => Promise<void>;
-  logout: () => Promise<void>;
+  segarkan: () => Promise<void>;
+  keluar: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -22,7 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [akun, setAkun] = useState<Akun | null>(null);
   const [memuat, setMemuat] = useState(true);
 
-  const refresh = useCallback(async () => {
+  const segarkan = useCallback(async () => {
     try {
       const body = await apiJson("/api/auth/me", meResponseSchema);
       setAkun(body.akun);
@@ -34,10 +34,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    void segarkan();
+  }, [segarkan]);
 
-  const logout = useCallback(async () => {
+  const keluar = useCallback(async () => {
     try {
       await apiFetch("/api/auth/logout", { method: "POST" });
     } catch {
@@ -47,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ akun, memuat, refresh, logout }}>
+    <AuthContext.Provider value={{ akun, memuat, segarkan, keluar }}>
       {children}
     </AuthContext.Provider>
   );

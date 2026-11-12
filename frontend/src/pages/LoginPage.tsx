@@ -5,7 +5,7 @@ import { apiFetch, pesanDariError } from "../api.ts";
 import { useAuth } from "../auth/AuthContext.tsx";
 
 export function LoginPage() {
-  const { refresh } = useAuth();
+  const { segarkan } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [pesan, setPesan] = useState<string | null>(null);
@@ -37,7 +37,7 @@ export function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(parsed.data),
       });
-      await refresh();
+      await segarkan();
       navigate(tujuanSetelahMasuk());
     } catch (error) {
       setPesan(
