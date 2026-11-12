@@ -14,6 +14,9 @@ import {
 import { createKeranjangRepository } from "./keranjang/repository.ts";
 import { createKeranjangService } from "./keranjang/service.ts";
 import { createAuthMiddleware } from "./middleware/auth.ts";
+import { createPelangganController } from "./pelanggan/controller.ts";
+import { createPelangganRepository } from "./pelanggan/repository.ts";
+import { createPelangganService } from "./pelanggan/service.ts";
 import { createAkunRepository } from "./repositories/akun-repository.ts";
 import { createAdminRouter } from "./routes/admin-routes.ts";
 import { createAuthRouter } from "./routes/auth-routes.ts";
@@ -49,10 +52,13 @@ export function createApp({ pool, config }: AppDeps) {
   app.use(express.json());
 
   const akunRepo = createAkunRepository(pool);
+  const pelangganRepo = createPelangganRepository(pool);
   const authService = createAuthService(akunRepo);
   const profilService = createProfilService(akunRepo);
+  const pelangganService = createPelangganService(pelangganRepo);
   const authController = createAuthController({ authService });
   const profilController = createProfilController({ profilService });
+  const pelangganController = createPelangganController({ pelangganService });
   const authMiddleware = createAuthMiddleware(akunRepo);
   const keranjangService = createKeranjangService(
     pool,
@@ -75,7 +81,7 @@ export function createApp({ pool, config }: AppDeps) {
   app.use("/api", keranjangRouter(keranjangController, authMiddleware));
   app.use("/api/auth", createAuthRouter(authController));
   app.use("/api/profil", createProfilRouter(profilController, authMiddleware));
-  app.use("/api/admin", createAdminRouter(authMiddleware));
+  app.use("/api/admin", createAdminRouter(authMiddleware, pelangganController));
 
   app.use(handleError);
 

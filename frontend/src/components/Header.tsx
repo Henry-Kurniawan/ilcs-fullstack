@@ -22,6 +22,14 @@ export function Header() {
         <nav className="flex items-center gap-4 text-sm">
           {memuat ? null : akun ? (
             <>
+              {akun.peran === "ADMIN" ? (
+                <Link
+                  to="/admin/pelanggan"
+                  className="font-medium text-slate-700 hover:underline"
+                >
+                  Pelanggan
+                </Link>
+              ) : null}
               {akun.peran === "PELANGGAN" ? (
                 <Link
                   to="/keranjang"
