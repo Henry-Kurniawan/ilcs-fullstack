@@ -11,12 +11,33 @@ type AkunUji = {
   aktif: boolean;
 };
 
-function stubSesi(akun: AkunUji | null) {
+const lagu = {
+  id: 7,
+  judul: "Cahaya Pagi",
+  artis: "Rina Prasetya",
+  genre: { id: 1, nama: "Pop" },
+  pencipta: "Budi Santoso",
+  labelRekaman: "Musika Records",
+  tanggalRilis: "2024-09-12",
+  harga: 25000,
+};
+
+function stubFetch(akun: AkunUji | null = null) {
   vi.stubGlobal(
     "fetch",
-    vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ akun }),
+    vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      const body = url.startsWith("/api/auth/me")
+        ? { akun }
+        : url.startsWith("/api/genre")
+          ? { data: [lagu.genre] }
+          : url === `/api/lagu/${lagu.id}`
+            ? { data: lagu }
+            : {
+                data: [lagu],
+                meta: { halaman: 1, ukuran: 12, total: 1, totalHalaman: 1 },
+              };
+      return { ok: true, status: 200, json: async () => body } as Response;
     }),
   );
 }
@@ -34,29 +55,45 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-it("menampilkan beranda dengan tautan masuk dan daftar untuk Pengunjung", async () => {
-  stubSesi(null);
+it("menampilkan katalog dengan kotak cari, filter genre, dan tautan masuk untuk Pengunjung", async () => {
+  stubFetch(null);
   renderRute("/");
 
-  expect(screen.getByRole("heading", { name: "MusicPedia" })).toBeTruthy();
+  expect(screen.getByRole("heading", { name: "Katalog Lagu" })).toBeTruthy();
+  expect(screen.getByPlaceholderText("Cari judul atau Artis")).toBeTruthy();
+  expect(screen.getByLabelText("Genre")).toBeTruthy();
+  expect(screen.getByLabelText("Urutan")).toBeTruthy();
   expect(await screen.findByRole("link", { name: "Masuk" })).toBeTruthy();
   expect(screen.getByRole("link", { name: "Daftar" })).toBeTruthy();
+  expect((await screen.findByText("Cahaya Pagi")).textContent).toBe(
+    "Cahaya Pagi",
+  );
+  expect(screen.getByText(/25\.000/)).toBeTruthy();
+});
+
+it("menampilkan halaman detail Lagu", async () => {
+  stubFetch(null);
+  renderRute(`/lagu/${lagu.id}`);
+
+  expect(
+    (await screen.findByRole("heading", { name: "Cahaya Pagi" })).textContent,
+  ).toBe("Cahaya Pagi");
+  expect(screen.getByText("Musika Records")).toBeTruthy();
+  expect(screen.getByText("Rina Prasetya")).toBeTruthy();
 });
 
 it("menampilkan halaman registrasi", async () => {
-  stubSesi(null);
+  stubFetch(null);
   renderRute("/registrasi");
 
-  expect(
-    await screen.findByRole("heading", { name: "Daftar" }),
-  ).toBeTruthy();
+  expect(await screen.findByRole("heading", { name: "Daftar" })).toBeTruthy();
   expect(screen.getByLabelText("Email")).toBeTruthy();
   expect(screen.getByLabelText("Kata sandi")).toBeTruthy();
   expect(screen.getByRole("button", { name: "Daftar" })).toBeTruthy();
 });
 
 it("menampilkan halaman login", async () => {
-  stubSesi(null);
+  stubFetch(null);
   renderRute("/masuk");
 
   expect(await screen.findByRole("heading", { name: "Masuk" })).toBeTruthy();
@@ -65,7 +102,7 @@ it("menampilkan halaman login", async () => {
 });
 
 it("menampilkan email dan tombol keluar saat Pelanggan sudah masuk", async () => {
-  stubSesi({
+  stubFetch({
     id: 1,
     email: "siti@example.com",
     peran: "PELANGGAN",

@@ -5,6 +5,7 @@ import type { Config } from "./config.ts";
 import { createAuthController } from "./controllers/auth-controller.ts";
 import type { Pool } from "./db.ts";
 import { AppError } from "./errors.ts";
+import { katalogRouter } from "./katalog/controller.ts";
 import { createAuthMiddleware } from "./middleware/auth.ts";
 import { createAkunRepository } from "./repositories/akun-repository.ts";
 import { createAdminRouter } from "./routes/admin-routes.ts";
@@ -52,6 +53,7 @@ export function createApp({ pool, config }: AppDeps) {
     res.json(body);
   });
 
+  app.use("/api", katalogRouter(pool));
   app.use("/api/auth", createAuthRouter(authController));
   app.use("/api/admin", createAdminRouter(authMiddleware));
 
