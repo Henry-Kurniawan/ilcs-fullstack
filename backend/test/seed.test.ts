@@ -328,7 +328,12 @@ describe("seed Data Demo", () => {
     await jalankanSeed(pool, ctx.config, () => {}, waktuSeed);
 
     const admin = await masuk(ctx.config.adminEmail, ctx.config.adminPassword);
-    const hariDemo = "2026-05-15";
+    const hariDemo = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Jakarta",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(waktuSeed);
     const laporanRes = await admin
       .get("/api/admin/laporan")
       .query({ dari: hariDemo, sampai: hariDemo })

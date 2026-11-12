@@ -7,9 +7,6 @@ services:
       POSTGRES_USER: musicpedia
       POSTGRES_PASSWORD: musicpedia
       POSTGRES_DB: musicpedia
-      # Samakan zona waktu dengan host. Data Demo memakai tanggal lokal
-      # (Asia/Jakarta), jadi Laporan Penjualan "hari ini" harus cocok.
-      PGTZ: ${TZ:-Asia/Jakarta}
     ports:
       - "5433:5432"
     volumes:
@@ -30,7 +27,10 @@ services:
       dockerfile: Dockerfile.dev
     command:
       ["sh", "-c", "node backend/src/migrate.ts && exec npm run dev --workspace backend"]
-    env_file: ".env"
+    # .env opsional: nilainya hanya melengkapi environment di bawah.
+    env_file:
+      - path: .env
+        required: false
     environment:
       NODE_ENV: development
       PORT: "3000"
@@ -56,9 +56,11 @@ services:
       context: .
       dockerfile: Dockerfile.dev
     command: ["npm", "run", "dev", "--workspace", "frontend", "--", "--host", "0.0.0.0"]
-    env_file: ".env"
     environment:
       API_PROXY_TARGET: http://backend:3000
+      # Bind mount tidak meneruskan event inotify di Docker Desktop. Setel
+      # VITE_USE_POLLING=true di lingkungan host bila perubahan tidak terdeteksi.
+      VITE_USE_POLLING: ${VITE_USE_POLLING:-false}
     ports:
       - "5173:5173"
     volumes:

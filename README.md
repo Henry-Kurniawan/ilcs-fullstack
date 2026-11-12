@@ -18,16 +18,14 @@ Prasyarat: Docker dan Docker Compose. Backend dan frontend berjalan di dalam con
 ```sh
 cp .env.example .env   # opsional, nilai bawaan sudah cocok dengan Docker Compose
 npm run dev            # PostgreSQL, backend (:3000), dan frontend (:5173) dalam satu perintah
-npm run seed           # Data Demo lengkap (lihat bagian berikut)
+npm run seed           # Data Demo lengkap (lihat bagian berikut), di terminal lain
 ```
 
-`npm run dev` menjalankan `docker compose up --build -V` di depan terminal: log semua service tampil berselang-seling dan Ctrl+C menghentikan semuanya. Opsi `-V` memperbarui volume `node_modules` di dalam container, jadi setelah mengubah dependensi cukup jalankan ulang perintah yang sama. Buka http://localhost:5173. Halaman awal menampilkan katalog Lagu dari `/api/lagu` di dalam header berisi status sesi (frontend memakai proxy Vite ke `/api`, yang di dalam Compose menunjuk ke service `backend`).
+`npm run dev` menjalankan `docker compose up --build -V` di depan terminal: log semua service tampil berselang-seling dan Ctrl+C menghentikan semuanya. Opsi `-V` memperbarui volume `node_modules` di dalam container, jadi setelah mengubah dependensi cukup jalankan ulang perintah yang sama. Buka http://localhost:5173. Halaman awal menampilkan katalog Lagu dari `/api/lagu` di dalam header berisi status sesi (frontend memakai proxy Vite ke `/api`, yang di dalam Compose menunjuk ke service `backend`). Watcher frontend memakai inotify, yang berjalan di Linux dan WSL. Di Docker Desktop, setel `VITE_USE_POLLING=true` saat menjalankan `npm run dev` bila perubahan berkas tidak terdeteksi.
 
-`npm test` dan `npm run seed` juga berjalan di dalam container. Audio Data Demo dan unggahan Admin tersimpan di `./backend/audio` pada host.
+`npm test` dan `npm run seed` juga berjalan di dalam container. `npm run seed` membutuhkan stack yang sedang berjalan. Audio Data Demo dan unggahan Admin tersimpan di `./backend/audio` pada host.
 
 Bila sudah punya Node dan ffmpeg di host dan ingin menjalankan backend serta frontend di luar container, pakai `npm install` lalu `npm run dev:local`. Versi host memakai PostgreSQL dari Compose dan `FFMPEG_PATH` dari `.env`; seed gagal dengan pesan yang menyebut `FFMPEG_PATH` bila biner tidak bisa dijalankan. Audio tidak pernah di-commit ke repo.
-
-Docker Compose menjalankan PostgreSQL dengan zona waktu `Asia/Jakarta` (variabel `TZ`, bawaan `Asia/Jakarta`) supaya tanggal Pembelian Data Demo dan Laporan Penjualan harian cocok dengan tanggal lokal. Ubah `TZ` di `.env` bila server memakai zona lain.
 
 `dockscope` (antarmuka monitoring container) tidak ikut `npm run dev`. Jalankan dengan `docker compose --profile tools up -d dockscope`, lalu buka http://localhost:4681.
 
@@ -319,7 +317,7 @@ Yang belum bisa diverifikasi di lingkungan ini: pembayaran Midtrans sandbox dan 
 | `npm run dev:local` | Backend dan frontend di host (butuh Node dan ffmpeg), PostgreSQL tetap di Compose |
 | `npm test` | `tsc --noEmit` semua workspace, lalu Vitest di container backend (butuh Docker) |
 | `npm run build` | Build frontend ke `frontend/dist` |
-| `npm run migrate` | Menjalankan migrasi SQL di `backend/migrations` dari host |
+| `npm run migrate` | Menjalankan migrasi SQL di `backend/migrations` dari host (butuh `npm install`) |
 | `npm run seed` | Menjalankan migrasi lalu mengisi seluruh Data Demo secara idempoten di container backend |
 | `npm run db:up` | Menjalankan PostgreSQL saja |
 | `npm run prod:up` | Build dan jalankan stack produksi dengan `.env.production` |
