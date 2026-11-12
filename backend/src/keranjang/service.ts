@@ -1,7 +1,5 @@
-import type { Keranjang } from "@musicpedia/shared";
-import type { Pool } from "../db.ts";
+import type { Keranjang, Lagu } from "@musicpedia/shared";
 import { AppError, isUniqueViolation } from "../errors.ts";
-import { detailLagu } from "../katalog/repository.ts";
 import type { KeranjangRepository } from "./repository.ts";
 
 export interface KeranjangService {
@@ -10,10 +8,16 @@ export interface KeranjangService {
   hapus(pelangganId: number, laguId: number): Promise<Keranjang>;
 }
 
-export function createKeranjangService(
-  pool: Pool,
-  repo: KeranjangRepository,
-): KeranjangService {
+export interface KeranjangDeps {
+  repo: KeranjangRepository;
+  /** Port ke konteks Katalog; Keranjang tidak membaca repository-nya langsung. */
+  detailLagu: (id: number) => Promise<Lagu | null>;
+}
+
+export function createKeranjangService({
+  repo,
+  detailLagu,
+}: KeranjangDeps): KeranjangService {
   async function lihat(pelangganId: number): Promise<Keranjang> {
     // Bersihkan sisa Lagu yang disembunyikan Admin agar Keranjang tidak
     // menyimpan baris yang tidak bisa dilihat maupun dihapus Pelanggan.
@@ -30,7 +34,7 @@ export function createKeranjangService(
     lihat,
 
     async tambah(pelangganId, laguId) {
-      const lagu = await detailLagu(pool, laguId);
+      const lagu = await detailLagu(laguId);
       if (!lagu) {
         throw new AppError(404, "TIDAK_DITEMUKAN", "Lagu tidak ditemukan.");
       }

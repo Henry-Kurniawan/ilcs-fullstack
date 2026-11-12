@@ -1,17 +1,14 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import type { MidtransNotification } from "@musicpedia/shared";
-import { withTransaction } from "../db.ts";
-import type { Pool } from "../db.ts";
 import { AppError } from "../errors.ts";
 import type {
   PaymentGateway,
   StatusTransaksiGateway,
 } from "../payment-gateway/client.ts";
-import {
-  pembelianDenganKodeOrder,
-  transisiPembelian,
-} from "../pembelian/repository.ts";
-import type { StatusAkhirPembelian } from "../pembelian/repository.ts";
+import type {
+  PembelianWebhook,
+  StatusAkhirPembelian,
+} from "../pembelian/service.ts";
 
 export interface WebhookService {
   terima(notifikasi: MidtransNotification): Promise<void>;
@@ -63,9 +60,9 @@ export function petakanStatusTransaksi(
 }
 
 export function createWebhookService(
-  pool: Pool,
   gateway: PaymentGateway,
   serverKey: string,
+  pembelianRepo: PembelianWebhook,
 ): WebhookService {
   return {
     async terima(notifikasi) {
@@ -79,8 +76,7 @@ export function createWebhookService(
       }
 
       // Notifikasi untuk kode order yang tidak kita kenal diabaikan.
-      const pembelian = await pembelianDenganKodeOrder(
-        pool,
+      const pembelian = await pembelianRepo.denganKodeOrder(
         notifikasi.order_id,
       );
       if (!pembelian) return;
@@ -102,9 +98,7 @@ export function createWebhookService(
       if (hasil === null) return;
       // Primitive transisi yang sama dengan Penyapu: hanya dari Menunggu
       // Pembayaran, sehingga notifikasi ganda atau terlambat tidak berefek.
-      await withTransaction(pool, (db) =>
-        transisiPembelian(db, pembelian.id, hasil),
-      );
+      await pembelianRepo.transisi(pembelian.id, hasil);
     },
   };
 }

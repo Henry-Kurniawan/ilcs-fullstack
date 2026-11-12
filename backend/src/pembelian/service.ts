@@ -11,10 +11,18 @@ import {
   kosongkanKeranjang,
   kunciPelanggan,
   laguDiKeranjang,
+  pembelianDenganKodeOrder,
   simpanTokenSnap,
   statusKepemilikan,
   tambahItemPembelian,
+  transisiPembelian,
 } from "./repository.ts";
+import type {
+  PembelianDikenal,
+  StatusAkhirPembelian,
+} from "./repository.ts";
+
+export type { StatusAkhirPembelian } from "./repository.ts";
 
 export const MASA_BERLAKU_PEMBELIAN_JAM = 24;
 
@@ -154,6 +162,35 @@ export function createPembelianService(
       }
       // Token yang tersimpan dipakai ulang; tidak ada transaksi gateway baru.
       return { ...tersimpan.pembelian, tokenSnap: tersimpan.tokenSnap };
+    },
+  };
+}
+
+/**
+ * Port Pembelian untuk konteks Webhook. Webhook memetakan kode order Midtrans
+ * lalu meminta transisi status; ia tidak menulis SQL Pembelian sendiri.
+ */
+export interface PembelianWebhook {
+  denganKodeOrder(kodeOrder: string): Promise<PembelianDikenal | null>;
+  transisi(
+    pembelianId: number,
+    status: StatusAkhirPembelian,
+  ): Promise<boolean>;
+}
+
+export function createPembelianWebhookService(
+  pool: Pool,
+): PembelianWebhook {
+  return {
+    denganKodeOrder(kodeOrder) {
+      return pembelianDenganKodeOrder(pool, kodeOrder);
+    },
+
+    transisi(pembelianId, status) {
+      // Transisi dan pencarian memakai primitive yang sama dengan checkout.
+      return withTransaction(pool, (db) =>
+        transisiPembelian(db, pembelianId, status),
+      );
     },
   };
 }

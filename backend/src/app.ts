@@ -29,7 +29,7 @@ import {
   createPembelianController,
   pembelianRouter,
 } from "./pembelian/controller.ts";
-import { createPembelianService } from "./pembelian/service.ts";
+import { createPembelianService, createPembelianWebhookService } from "./pembelian/service.ts";
 import { createPelangganController } from "./pelanggan/controller.ts";
 import { createPelangganRepository } from "./pelanggan/repository.ts";
 import { createPelangganService } from "./pelanggan/service.ts";
@@ -87,10 +87,11 @@ export function createApp({ pool, config, paymentGateway }: AppDeps) {
   const profilController = createProfilController({ profilService });
   const pelangganController = createPelangganController({ pelangganService });
   const authMiddleware = createAuthMiddleware(akunRepo);
-  const keranjangService = createKeranjangService(
-    pool,
-    createKeranjangRepository(pool),
-  );
+  const katalogService = createKatalogService(pool);
+  const keranjangService = createKeranjangService({
+    repo: createKeranjangRepository(pool),
+    detailLagu: (id) => katalogService.detailLagu(id),
+  });
   const keranjangController = createKeranjangController({
     service: keranjangService,
   });
@@ -104,7 +105,11 @@ export function createApp({ pool, config, paymentGateway }: AppDeps) {
     service: createPembelianService(pool, gateway),
   });
   const webhookController = createWebhookController({
-    service: createWebhookService(pool, gateway, config.midtransServerKey),
+    service: createWebhookService(
+      gateway,
+      config.midtransServerKey,
+      createPembelianWebhookService(pool),
+    ),
   });
 
   app.use(createSessionMiddleware(pool, config));
@@ -132,7 +137,7 @@ export function createApp({ pool, config, paymentGateway }: AppDeps) {
   });
 
   const katalogController = createKatalogController({
-    service: createKatalogService(pool),
+    service: katalogService,
     audioDir: config.audioDir,
   });
 
