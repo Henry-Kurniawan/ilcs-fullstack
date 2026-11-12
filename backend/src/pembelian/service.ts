@@ -5,6 +5,7 @@ import { AppError } from "../errors.ts";
 import type { PaymentGateway } from "../payment-gateway/client.ts";
 import {
   ambilPembelianMilik,
+  buangLaguTersembunyiDariKeranjang,
   buatPembelian,
   daftarPembelian,
   kosongkanKeranjang,
@@ -41,21 +42,15 @@ export function createPembelianService(
           throw new AppError(401, "BELUM_MASUK", "Silakan masuk terlebih dahulu.");
         }
 
+        // Lagu yang disembunyikan Admin dibersihkan dari Keranjang lebih dulu,
+        // sehingga checkout hanya memproses Lagu yang masih terlihat.
+        await buangLaguTersembunyiDariKeranjang(db, pelangganId);
         const lagu = await laguDiKeranjang(db, pelangganId);
         if (lagu.length === 0) {
           throw new AppError(
             409,
             "KERANJANG_KOSONG",
             "Keranjang Anda masih kosong.",
-          );
-        }
-
-        // Validasi ulang: Lagu bisa disembunyikan Admin setelah masuk Keranjang.
-        if (lagu.some((item) => item.tersembunyi)) {
-          throw new AppError(
-            409,
-            "LAGU_TIDAK_TERSEDIA",
-            "Ada Lagu di Keranjang yang sudah tidak tersedia. Hapus Lagu itu lalu coba lagi.",
           );
         }
 

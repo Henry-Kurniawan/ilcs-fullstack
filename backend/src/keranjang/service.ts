@@ -15,6 +15,9 @@ export function createKeranjangService(
   repo: KeranjangRepository,
 ): KeranjangService {
   async function lihat(pelangganId: number): Promise<Keranjang> {
+    // Bersihkan sisa Lagu yang disembunyikan Admin agar Keranjang tidak
+    // menyimpan baris yang tidak bisa dilihat maupun dihapus Pelanggan.
+    await repo.buangLaguTersembunyi(pelangganId);
     const items = await repo.daftar(pelangganId);
     return {
       items,

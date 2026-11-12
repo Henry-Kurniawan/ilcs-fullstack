@@ -198,7 +198,42 @@ describe("Aturan checkout", () => {
     );
   });
 
-  it("menolak Lagu yang disembunyikan setelah masuk Keranjang", async () => {
+  it("membuang Lagu tersembunyi dari Keranjang lalu checkout sisanya", async () => {
+    await buatPelanggan();
+    const genreId = await buatGenre();
+    const disembunyikan = await buatLagu({
+      genreId,
+      judul: "Lagu Disembunyikan",
+      harga: 25000,
+    });
+    const tersisa = await buatLagu({
+      genreId,
+      judul: "Lagu Tersisa",
+      harga: 30000,
+    });
+    const agent = await masuk();
+    await isiKeranjang(agent, disembunyikan);
+    await isiKeranjang(agent, tersisa);
+
+    const adminAgent = await masukAdmin();
+    await adminAgent
+      .patch(`/api/admin/lagu/${disembunyikan}/tersembunyi`)
+      .send({ tersembunyi: true })
+      .expect(200);
+
+    const keranjang = keranjangResponseSchema.parse(
+      (await agent.get("/api/keranjang").expect(200)).body,
+    ).data;
+    expect(keranjang.items.map((lagu) => lagu.id)).toEqual([tersisa]);
+    expect(keranjang.total).toBe(30000);
+
+    const res = await agent.post("/api/pembelian").expect(201);
+    const data = pembelianCheckoutResponseSchema.parse(res.body).data;
+    expect(data.itemPembelian.map((item) => item.laguId)).toEqual([tersisa]);
+    expect(data.total).toBe(30000);
+  });
+
+  it("menjawab Keranjang kosong bila semua Lagu disembunyikan Admin", async () => {
     await buatPelanggan();
     const genreId = await buatGenre();
     const laguId = await buatLagu({ genreId });
@@ -208,16 +243,16 @@ describe("Aturan checkout", () => {
       laguId,
     ]);
 
+    // Checkout langsung tanpa membaca Keranjang lebih dulu: pembersihan juga
+    // terjadi di dalam checkout, bukan hanya saat Keranjang dibaca.
     const res = await agent.post("/api/pembelian").expect(409);
-    expect(errorResponseSchema.parse(res.body).code).toBe("LAGU_TIDAK_TERSEDIA");
+    expect(errorResponseSchema.parse(res.body).code).toBe("KERANJANG_KOSONG");
+    expect(gatewayPalsu.permintaan).toHaveLength(0);
 
-    await pool.query("UPDATE lagu SET tersembunyi = false WHERE id = $1", [
-      laguId,
-    ]);
     const keranjang = keranjangResponseSchema.parse(
       (await agent.get("/api/keranjang").expect(200)).body,
     ).data;
-    expect(keranjang.items.map((lagu) => lagu.id)).toEqual([laguId]);
+    expect(keranjang.jumlah).toBe(0);
   });
 
   it("membatalkan Pembelian bila Payment Gateway gagal", async () => {

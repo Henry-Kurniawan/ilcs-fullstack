@@ -15,6 +15,7 @@ export interface KeranjangRepository {
   daftar(pelangganId: number): Promise<Lagu[]>;
   tambah(pelangganId: number, laguId: number): Promise<void>;
   hapus(pelangganId: number, laguId: number): Promise<void>;
+  buangLaguTersembunyi(pelangganId: number): Promise<void>;
   statusPembelian(
     pelangganId: number,
     laguId: number,
@@ -51,6 +52,19 @@ export function createKeranjangRepository(pool: Pool): KeranjangRepository {
         `DELETE FROM keranjang
          WHERE pelanggan_id = $1 AND lagu_id = $2`,
         [pelangganId, laguId],
+      );
+    },
+
+    async buangLaguTersembunyi(pelangganId) {
+      // Baris Keranjang untuk Lagu tersembunyi tidak boleh menggantung: ia
+      // tidak tampil di UI sehingga Pelanggan tidak bisa menghapusnya sendiri.
+      await pool.query(
+        `DELETE FROM keranjang k
+         USING lagu l
+         WHERE l.id = k.lagu_id
+           AND k.pelanggan_id = $1
+           AND l.tersembunyi = true`,
+        [pelangganId],
       );
     },
 
