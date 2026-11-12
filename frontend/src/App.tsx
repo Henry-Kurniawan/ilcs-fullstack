@@ -2,6 +2,7 @@ import { Route, Routes } from "react-router";
 import { AdminGenrePage } from "./admin/AdminGenrePage.tsx";
 import { AdminLaguFormPage } from "./admin/AdminLaguFormPage.tsx";
 import { AdminLaguPage } from "./admin/AdminLaguPage.tsx";
+import { AdminLaporanPage } from "./admin/AdminLaporanPage.tsx";
 import { PerluAdmin } from "./admin/PerluAdmin.tsx";
 import { AuthProvider } from "./auth/AuthContext.tsx";
 import { KatalogPage } from "./KatalogPage.tsx";
@@ -57,6 +58,14 @@ export function App() {
               element={
                 <PerluAdmin>
                   <AdminGenrePage />
+                </PerluAdmin>
+              }
+            />
+            <Route
+              path="admin/laporan"
+              element={
+                <PerluAdmin>
+                  <AdminLaporanPage />
                 </PerluAdmin>
               }
             />

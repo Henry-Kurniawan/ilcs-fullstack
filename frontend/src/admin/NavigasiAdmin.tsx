@@ -1,7 +1,11 @@
 import { Link } from "react-router";
 
-export function NavigasiAdmin({ aktif }: { aktif: "lagu" | "genre" }) {
-  const kelas = (nama: "lagu" | "genre") =>
+export function NavigasiAdmin({
+  aktif,
+}: {
+  aktif: "lagu" | "genre" | "laporan";
+}) {
+  const kelas = (nama: "lagu" | "genre" | "laporan") =>
     `rounded-md px-3 py-1.5 text-sm font-medium ${
       aktif === nama
         ? "bg-slate-900 text-white"
@@ -15,6 +19,9 @@ export function NavigasiAdmin({ aktif }: { aktif: "lagu" | "genre" }) {
       </Link>
       <Link to="/admin/genre" className={kelas("genre")}>
         Genre
+      </Link>
+      <Link to="/admin/laporan" className={kelas("laporan")}>
+        Laporan
       </Link>
     </nav>
   );

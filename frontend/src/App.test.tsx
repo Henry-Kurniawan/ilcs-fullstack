@@ -69,6 +69,22 @@ const pelanggan = {
   aktif: true,
 };
 
+const laporanPenjualan = {
+  dari: "2026-11-01",
+  sampai: "2026-11-30",
+  total: lagu.harga,
+  data: [
+    {
+      pembelianId: 22,
+      tanggalBayar: "2026-11-05T03:00:00.000Z",
+      judul: lagu.judul,
+      artis: lagu.artis,
+      pelanggan: pelanggan.nama,
+      harga: lagu.harga,
+    },
+  ],
+};
+
 function stubFetch(akun: AkunUji | null = null) {
   vi.stubGlobal(
     "fetch",
@@ -76,7 +92,9 @@ function stubFetch(akun: AkunUji | null = null) {
       const url = String(input);
       const body = url.startsWith("/api/auth/me")
         ? { akun }
-        : url.startsWith("/api/admin/lagu")
+        : url.startsWith("/api/admin/laporan")
+          ? laporanPenjualan
+          : url.startsWith("/api/admin/lagu")
           ? {
               data: [laguAdmin],
               meta: { halaman: 1, ukuran: 50, total: 1, totalHalaman: 1 },
@@ -327,4 +345,31 @@ it("mengalihkan Pelanggan yang membuka area Admin", async () => {
   expect(
     await screen.findByRole("heading", { name: "Katalog Lagu" }),
   ).toBeTruthy();
+});
+
+it("menampilkan Laporan Penjualan dengan tabel dan ekspor untuk Admin", async () => {
+  stubFetch({
+    id: 2,
+    email: "admin@musicpedia.id",
+    nama: "Admin Musikapedia",
+    peran: "ADMIN",
+    aktif: true,
+  });
+  renderRute("/admin/laporan");
+
+  expect(
+    await screen.findByRole("heading", { name: "Laporan Penjualan" }),
+  ).toBeTruthy();
+  expect(screen.getByLabelText("Dari tanggal")).toBeTruthy();
+  expect(screen.getByLabelText("Sampai tanggal")).toBeTruthy();
+  expect(await screen.findByText("Cahaya Pagi")).toBeTruthy();
+  expect(screen.getByText("Rina Prasetya")).toBeTruthy();
+  expect(screen.getByText("Siti Rahma")).toBeTruthy();
+  expect(screen.getByText("05/11/2026 10:00")).toBeTruthy();
+  expect(screen.getByText(/^Total/).textContent).toContain("25.000");
+  expect(screen.getByRole("link", { name: "Ekspor PDF" })).toBeTruthy();
+  expect(screen.getByRole("link", { name: "Ekspor Excel" })).toBeTruthy();
+  expect(
+    screen.getAllByRole("link", { name: "Laporan" }).length,
+  ).toBeGreaterThan(0);
 });
