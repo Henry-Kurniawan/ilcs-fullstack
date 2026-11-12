@@ -23,12 +23,26 @@ export function Header() {
           {memuat ? null : akun ? (
             <>
               {akun.peran === "ADMIN" ? (
-                <Link
-                  to="/admin/lagu"
-                  className="font-medium text-amber-700 hover:underline"
-                >
-                  Admin
-                </Link>
+                <>
+                  <Link
+                    to="/admin/lagu"
+                    className="font-medium text-slate-700 hover:underline"
+                  >
+                    Lagu
+                  </Link>
+                  <Link
+                    to="/admin/genre"
+                    className="font-medium text-slate-700 hover:underline"
+                  >
+                    Genre
+                  </Link>
+                  <Link
+                    to="/admin/pelanggan"
+                    className="font-medium text-slate-700 hover:underline"
+                  >
+                    Pelanggan
+                  </Link>
+                </>
               ) : null}
               {akun.peran === "PELANGGAN" ? (
                 <Link

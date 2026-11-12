@@ -7,6 +7,7 @@ import { AuthProvider } from "./auth/AuthContext.tsx";
 import { KatalogPage } from "./KatalogPage.tsx";
 import { LaguDetailPage } from "./LaguDetailPage.tsx";
 import { Layout } from "./Layout.tsx";
+import { AdminPelangganPage } from "./pages/AdminPelangganPage.tsx";
 import { KeranjangProvider } from "./keranjang/KeranjangContext.tsx";
 import { KeranjangPage } from "./pages/KeranjangPage.tsx";
 import { LoginPage } from "./pages/LoginPage.tsx";
@@ -57,6 +58,7 @@ export function App() {
                 </PerluAdmin>
               }
             />
+            <Route path="admin/pelanggan" element={<AdminPelangganPage />} />
           </Route>
         </Routes>
       </KeranjangProvider>

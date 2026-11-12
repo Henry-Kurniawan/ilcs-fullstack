@@ -138,6 +138,59 @@ export const metaHalamanSchema = z.object({
 
 export type MetaHalaman = z.infer<typeof metaHalamanSchema>;
 
+export const pelangganSchema = z.object({
+  id: z.number().int().positive(),
+  email: z.email(),
+  nama: z.string(),
+  aktif: z.boolean(),
+});
+
+export type Pelanggan = z.infer<typeof pelangganSchema>;
+
+export const daftarPelangganQuerySchema = z.object({
+  cari: z.string().trim().optional(),
+  halaman: z.coerce.number().int().min(1).default(1),
+  ukuran: z.coerce.number().int().min(1).max(100).default(20),
+});
+
+export type DaftarPelangganQuery = z.infer<typeof daftarPelangganQuerySchema>;
+
+export const daftarPelangganResponseSchema = z.object({
+  data: z.array(pelangganSchema),
+  meta: metaHalamanSchema,
+});
+
+export type DaftarPelangganResponse = z.infer<
+  typeof daftarPelangganResponseSchema
+>;
+
+export const updatePelangganRequestSchema = z
+  .strictObject({
+    nama: namaSchema.optional(),
+    email: emailSchema.optional(),
+  })
+  .refine((data) => data.nama !== undefined || data.email !== undefined, {
+    message: "Isi minimal nama atau email Pelanggan.",
+  });
+
+export type UpdatePelangganRequest = z.infer<
+  typeof updatePelangganRequestSchema
+>;
+
+export const ubahStatusPelangganRequestSchema = z.strictObject({
+  aktif: z.boolean({ message: "Status aktif wajib diisi." }),
+});
+
+export type UbahStatusPelangganRequest = z.infer<
+  typeof ubahStatusPelangganRequestSchema
+>;
+
+export const pelangganResponseSchema = z.object({
+  data: pelangganSchema,
+});
+
+export type PelangganResponse = z.infer<typeof pelangganResponseSchema>;
+
 export const daftarLaguResponseSchema = z.object({
   data: z.array(laguSchema),
   meta: metaHalamanSchema,

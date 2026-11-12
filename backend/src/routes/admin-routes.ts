@@ -8,17 +8,21 @@ import { createGenreAdminService } from "../admin/genre-service.ts";
 import { createLaguAdminService } from "../admin/lagu-service.ts";
 import type { Pool } from "../db.ts";
 import type { createAuthMiddleware } from "../middleware/auth.ts";
+import type { PelangganController } from "../pelanggan/controller.ts";
+import { createAdminPelangganRouter } from "../pelanggan/routes.ts";
 
 export interface AdminRouterDeps {
   pool: Pool;
   config: Config;
   authMiddleware: ReturnType<typeof createAuthMiddleware>;
+  pelangganController: PelangganController;
 }
 
 export function createAdminRouter({
   pool,
   config,
   authMiddleware,
+  pelangganController,
 }: AdminRouterDeps): Router {
   const router = Router();
   router.use(authMiddleware.requireRole("ADMIN"));
@@ -36,6 +40,11 @@ export function createAdminRouter({
   router.get("/ping", (_req, res) => {
     res.json({ status: "ok" });
   });
+
+  router.use(
+    "/pelanggan",
+    createAdminPelangganRouter(pelangganController, authMiddleware),
+  );
 
   router.get("/lagu", lagu.daftar);
   router.get("/lagu/:id", lagu.detail);

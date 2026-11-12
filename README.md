@@ -37,6 +37,12 @@ Buka http://localhost:5173. Halaman awal menampilkan katalog Lagu dari `/api/lag
 - Trial hanya bisa di-stream lewat `/api/lagu/:id/trial` untuk Lagu yang tidak disembunyikan. mp3 penuh tidak pernah disajikan endpoint publik.
 - Alasan dan konsekuensinya ada di [ADR 0004](docs/adr/0004-penyimpanan-audio-dan-trial.md).
 
+## Area Admin
+- Admin mengelola Pelanggan di `/admin/pelanggan`: daftar dengan pencarian nama atau email dan paginasi, ubah nama/email, serta nonaktifkan dan aktifkan kembali.
+- Admin mengelola Lagu di `/admin/lagu` dan Genre di `/admin/genre`, termasuk menyembunyikan Lagu dan menghapus Genre yang belum dipakai.
+- Pelanggan tidak pernah dihapus; API tidak menyediakan endpoint hapus. Menonaktifkan Pelanggan langsung memutus sesi aktifnya pada request berikutnya (ADR 0003), dan mengaktifkannya kembali membuat Pelanggan bisa login lagi.
+- Akun Admin tidak pernah muncul di daftar Pelanggan. Admin juga tidak dapat menonaktifkan akunnya sendiri lewat area ini.
+
 ## Perintah
 | Perintah | Fungsi |
 | --- | --- |
