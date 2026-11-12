@@ -115,7 +115,7 @@ export const laguSchema = z.object({
 
 export type Lagu = z.infer<typeof laguSchema>;
 
-export const urutanLaguSchema = z.enum(["terbaru"]);
+export const urutanLaguSchema = z.enum(["terbaru", "terlaris"]);
 
 export type UrutanLagu = z.infer<typeof urutanLaguSchema>;
 
@@ -361,6 +361,25 @@ export const pembelianCheckoutResponseSchema = z.object({
 
 export type PembelianCheckoutResponse = z.infer<
   typeof pembelianCheckoutResponseSchema
+>;
+
+export const midtransNotificationSchema = z.object({
+  order_id: z.string().min(1),
+  status_code: z.string().min(1),
+  gross_amount: z.union([z.string(), z.number()]).transform(String),
+  signature_key: z.string().min(1),
+  transaction_status: z.string().min(1),
+  fraud_status: z.string().nullish(),
+});
+
+export type MidtransNotification = z.infer<typeof midtransNotificationSchema>;
+
+export const midtransWebhookResponseSchema = z.object({
+  status: z.literal("ok"),
+});
+
+export type MidtransWebhookResponse = z.infer<
+  typeof midtransWebhookResponseSchema
 >;
 
 export const konfigurasiResponseSchema = z.object({

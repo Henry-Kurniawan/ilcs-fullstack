@@ -39,6 +39,7 @@ export function katalogRouter(pool: Pool, { audioDir }: KatalogDeps) {
     const body = await ambilDaftarLagu(pool, {
       cari: query.data.cari === "" ? undefined : query.data.cari,
       genre: query.data.genre,
+      urutan: query.data.urutan,
       halaman: query.data.halaman,
       ukuran: query.data.ukuran,
     });

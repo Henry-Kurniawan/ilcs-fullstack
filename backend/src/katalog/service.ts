@@ -2,6 +2,7 @@ import type {
   DaftarGenreResponse,
   DaftarLaguResponse,
   Lagu,
+  UrutanLagu,
 } from "@musicpedia/shared";
 import type { Pool } from "../db.ts";
 import { daftarGenre, daftarLagu, detailLagu, trialLagu } from "./repository.ts";
@@ -9,6 +10,7 @@ import { daftarGenre, daftarLagu, detailLagu, trialLagu } from "./repository.ts"
 export interface PermintaanDaftarLagu {
   cari?: string;
   genre?: number;
+  urutan: UrutanLagu;
   halaman: number;
   ukuran: number;
 }
@@ -21,6 +23,7 @@ export async function ambilDaftarLagu(
   const { items, total } = await daftarLagu(pool, {
     cari: permintaan.cari,
     genre: permintaan.genre,
+    urutan: permintaan.urutan,
     limit: permintaan.ukuran,
     offset,
   });

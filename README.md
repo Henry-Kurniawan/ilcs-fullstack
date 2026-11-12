@@ -48,7 +48,27 @@ Buka http://localhost:5173. Halaman awal menampilkan katalog Lagu dari `/api/lag
 - Checkout berjalan dalam satu transaksi DB: baris Pelanggan dikunci (`SELECT … FOR UPDATE`), aturan Keranjang divalidasi ulang, Pembelian dan Item Pembelian dibuat dengan harga saat checkout, Keranjang dikosongkan, lalu token Snap diminta dengan masa berlaku 24 jam. Bila gateway gagal, semuanya di-rollback.
 - Riwayat Pembelian ada di `/pembelian`. Pembelian Menunggu Pembayaran bisa dilanjutkan dengan token Snap yang tersimpan, tanpa membuat transaksi baru.
 - `MIDTRANS_SERVER_KEY` hanya ada di server. Frontend memuat `MIDTRANS_CLIENT_KEY` dan URL snap.js lewat `GET /api/konfigurasi`.
-- `MIDTRANS_PRODUCTION=true` memakai endpoint Midtrans produksi; nilai lain memakai sandbox. Webhook dan penyapu Gagal dikerjakan di ticket terpisah.
+- `MIDTRANS_PRODUCTION=true` memakai endpoint Midtrans produksi; nilai lain memakai sandbox.
+- Katalog bisa diurutkan Terlaris lewat `GET /api/lagu?urutan=terlaris`: jumlah Pembelian Lunas yang memuat Lagu itu, lalu Terbaru sebagai penentu seri. Lagu tanpa penjualan ada di akhir.
+
+### Webhook Midtrans
+`POST /api/webhook/midtrans` menerima notifikasi Midtrans dan memindahkan Pembelian dari Menunggu Pembayaran ke Lunas atau Gagal.
+
+- Endpoint ini publik karena Midtrans tidak membawa sesi Pelanggan. Keaslian permintaan dijaga oleh `signature_key`, yaitu SHA-512 dari `order_id + status_code + gross_amount + MIDTRANS_SERVER_KEY`. Signature salah ditolak `401` tanpa mengubah data.
+- Isi notifikasi tidak dipercaya sendiri: status dicek ulang ke Status API Midtrans. `settlement`, atau `capture` dengan `fraud_status=accept`, membuat Pembelian Lunas dan mencatat waktu bayar. `deny`, `cancel`, dan `expire` membuatnya Gagal. `pending` dan status lain diabaikan, tetapi tetap dijawab `200` agar Midtrans berhenti mencoba ulang.
+- Transisi hanya berlaku dari Menunggu Pembayaran, jadi notifikasi ganda atau terlambat tidak mengubah Pembelian yang sudah Lunas atau Gagal.
+
+### Menerima webhook Midtrans sandbox di mesin lokal
+Midtrans tidak bisa menjangkau `localhost`, jadi saat dev gunakan tunnel cloudflared:
+
+1. Pasang cloudflared: `brew install cloudflared` di macOS, atau unduh paket dari [rilis cloudflared](https://github.com/cloudflare/cloudflared/releases) di Linux/Windows.
+2. Jalankan `npm run dev`, lalu di terminal lain jalankan `cloudflared tunnel --url http://localhost:3000`. Catat URL acak yang dicetak, misalnya `https://contoh-acak.trycloudflare.com`.
+3. Di dashboard Midtrans sandbox, buka **Settings → Payment Notification URL** dan isi `https://contoh-acak.trycloudflare.com/api/webhook/midtrans`.
+4. Pastikan `MIDTRANS_SERVER_KEY` di `.env` sama dengan server key sandbox yang dipakai Midtrans. Nilai ini dipakai untuk memverifikasi signature dan memanggil Status API.
+5. Lakukan pembayaran uji lewat Snap sandbox. Notifikasi akan masuk ke backend dan status Pembelian berubah di halaman riwayat.
+
+URL `trycloudflare.com` berganti setiap kali tunnel dijalankan ulang, jadi perbarui Payment Notification URL bila perlu. Untuk webhook dari mesin lokal ini `MIDTRANS_PRODUCTION` harus `false`.
+
 
 ## Perintah
 | Perintah | Fungsi |

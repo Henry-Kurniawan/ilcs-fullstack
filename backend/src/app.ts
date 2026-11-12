@@ -39,6 +39,11 @@ import { createProfilRouter } from "./routes/profil-routes.ts";
 import { createSessionMiddleware } from "./session.ts";
 import { createAuthService } from "./services/auth-service.ts";
 import { createProfilService } from "./services/profil-service.ts";
+import {
+  createWebhookController,
+  webhookRouter,
+} from "./webhook/controller.ts";
+import { createWebhookService } from "./webhook/service.ts";
 
 export interface AppDeps {
   pool: Pool;
@@ -93,6 +98,9 @@ export function createApp({ pool, config, paymentGateway }: AppDeps) {
   const pembelianController = createPembelianController({
     service: createPembelianService(pool, gateway),
   });
+  const webhookController = createWebhookController({
+    service: createWebhookService(pool, gateway, config.midtransServerKey),
+  });
 
   app.use(createSessionMiddleware(pool, config));
   app.use(authMiddleware.muatAkunAktif);
@@ -116,6 +124,7 @@ export function createApp({ pool, config, paymentGateway }: AppDeps) {
   app.use("/api", katalogRouter(pool, { audioDir: config.audioDir }));
   app.use("/api", keranjangRouter(keranjangController, authMiddleware));
   app.use("/api", pembelianRouter(pembelianController, authMiddleware));
+  app.use("/api", webhookRouter(webhookController));
   app.use("/api/auth", createAuthRouter(authController));
   app.use("/api/profil", createProfilRouter(profilController, authMiddleware));
   app.use(

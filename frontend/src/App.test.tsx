@@ -132,6 +132,7 @@ it("menampilkan katalog dengan kotak cari, filter genre, dan tautan masuk untuk 
   expect(screen.getByPlaceholderText("Cari judul atau Artis")).toBeTruthy();
   expect(screen.getByLabelText("Genre")).toBeTruthy();
   expect(screen.getByLabelText("Urutan")).toBeTruthy();
+  expect(screen.getByRole("option", { name: "Terlaris" })).toBeTruthy();
   expect(await screen.findByRole("link", { name: "Masuk" })).toBeTruthy();
   expect(screen.getByRole("link", { name: "Daftar" })).toBeTruthy();
   expect((await screen.findByText("Cahaya Pagi")).textContent).toBe(

@@ -255,6 +255,48 @@ export async function daftarPembelian(
   return [...perPembelian.values()].map(kePembelian);
 }
 
+/** Apakah ada Pembelian dengan kode order ini? Notifikasi asing diabaikan. */
+export async function pembelianDenganKodeOrder(
+  pool: Pool,
+  kodeOrder: string,
+): Promise<boolean> {
+  const { rowCount } = await pool.query(
+    "SELECT 1 FROM pembelian WHERE kode_order = $1",
+    [kodeOrder],
+  );
+  return rowCount === 1;
+}
+
+/**
+ * Transisi Menunggu Pembayaran → Lunas. Hanya baris yang masih Menunggu
+ * Pembayaran yang berubah, sehingga notifikasi ganda atau terlambat tidak
+ * mengubah Pembelian yang sudah final.
+ */
+export async function tandaiPembelianLunas(
+  pool: Pool,
+  kodeOrder: string,
+): Promise<void> {
+  await pool.query(
+    `UPDATE pembelian
+     SET status = 'LUNAS', dibayar_pada = now()
+     WHERE kode_order = $1 AND status = 'MENUNGGU_PEMBAYARAN'`,
+    [kodeOrder],
+  );
+}
+
+/** Transisi Menunggu Pembayaran → Gagal. Lunas dan Gagal bersifat final. */
+export async function tandaiPembelianGagal(
+  pool: Pool,
+  kodeOrder: string,
+): Promise<void> {
+  await pool.query(
+    `UPDATE pembelian
+     SET status = 'GAGAL'
+     WHERE kode_order = $1 AND status = 'MENUNGGU_PEMBAYARAN'`,
+    [kodeOrder],
+  );
+}
+
 export interface PembelianDenganToken {
   pembelian: Pembelian;
   tokenSnap: string | null;

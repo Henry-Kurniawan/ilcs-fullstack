@@ -8,6 +8,7 @@ export interface GatewayPalsu {
   gateway: PaymentGateway;
   permintaan: PermintaanTransaksiSnap[];
   aturStatus(status: string): void;
+  aturFraudStatus(fraudStatus: string | null): void;
   aturGagal(gagal: boolean): void;
   aturToken(token: string | null): void;
 }
@@ -20,6 +21,7 @@ export interface GatewayPalsu {
 export function buatGatewayPalsu(): GatewayPalsu {
   const permintaan: PermintaanTransaksiSnap[] = [];
   let status = "pending";
+  let fraudStatus: string | null = null;
   let gagal = false;
   let token: string | null = null;
 
@@ -27,6 +29,9 @@ export function buatGatewayPalsu(): GatewayPalsu {
     permintaan,
     aturStatus(nilai) {
       status = nilai;
+    },
+    aturFraudStatus(nilai) {
+      fraudStatus = nilai;
     },
     aturGagal(nilai) {
       gagal = nilai;
@@ -49,7 +54,7 @@ export function buatGatewayPalsu(): GatewayPalsu {
         if (gagal) {
           throw new Error("Payment Gateway tidak dapat dihubungi");
         }
-        return { kodeOrder, status, fraudStatus: null, statusCode: "200" };
+        return { kodeOrder, status, fraudStatus, statusCode: "200" };
       },
     },
   };
