@@ -36,10 +36,15 @@ function parseRentang(header: string, ukuran: number): Rentang | null {
  * header Content-Disposition, sehingga Trial hanya bisa diputar, bukan
  * diunduh sebagai lampiran.
  */
+export interface OpsiKirimAudio {
+  contentDisposition?: string;
+}
+
 export async function kirimAudio(
   req: IncomingMessage,
   res: ServerResponse,
   pathBerkas: string,
+  opsi: OpsiKirimAudio = {},
 ): Promise<boolean> {
   let ukuran: number;
   try {
@@ -51,6 +56,9 @@ export async function kirimAudio(
   }
 
   res.setHeader("Content-Type", "audio/mpeg");
+  if (opsi.contentDisposition) {
+    res.setHeader("Content-Disposition", opsi.contentDisposition);
+  }
   res.setHeader("Accept-Ranges", "bytes");
   res.setHeader("Cache-Control", "private, max-age=0, must-revalidate");
 

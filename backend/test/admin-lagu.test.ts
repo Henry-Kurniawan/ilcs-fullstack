@@ -360,9 +360,11 @@ describe("Trial Lagu", () => {
       .expect(416);
     expect(tidakValid.headers["content-range"]).toMatch(/^bytes \*\/\d+$/);
 
-    for (const jalur of ["mp3", "file", "download", "unduh"]) {
+    for (const jalur of ["mp3", "file", "download"]) {
       await request(app).get(`/api/lagu/${lagu.id}/${jalur}`).expect(404);
     }
+    // Unduhan mp3 penuh khusus Pelanggan pemilik, jadi Pengunjung ditolak.
+    await request(app).get(`/api/lagu/${lagu.id}/unduh`).expect(401);
   });
 
   it("menjawab 404 saat Lagu tidak punya Trial", async () => {

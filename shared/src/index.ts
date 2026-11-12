@@ -204,6 +204,14 @@ export const laguResponseSchema = z.object({
 
 export type LaguResponse = z.infer<typeof laguResponseSchema>;
 
+export const daftarLaguSayaResponseSchema = z.object({
+  data: z.array(laguSchema),
+});
+
+export type DaftarLaguSayaResponse = z.infer<
+  typeof daftarLaguSayaResponseSchema
+>;
+
 export const daftarGenreResponseSchema = z.object({
   data: z.array(genreSchema),
 });

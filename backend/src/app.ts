@@ -40,6 +40,10 @@ import { createSessionMiddleware } from "./session.ts";
 import { createAuthService } from "./services/auth-service.ts";
 import { createProfilService } from "./services/profil-service.ts";
 import {
+  createUnduhanController,
+  unduhanRouter,
+} from "./unduhan/controller.ts";
+import {
   createWebhookController,
   webhookRouter,
 } from "./webhook/controller.ts";
@@ -121,7 +125,13 @@ export function createApp({ pool, config, paymentGateway }: AppDeps) {
     res.json(body);
   });
 
+  const unduhanController = createUnduhanController({
+    pool,
+    audioDir: config.audioDir,
+  });
+
   app.use("/api", katalogRouter(pool, { audioDir: config.audioDir }));
+  app.use("/api", unduhanRouter(unduhanController, authMiddleware));
   app.use("/api", keranjangRouter(keranjangController, authMiddleware));
   app.use("/api", pembelianRouter(pembelianController, authMiddleware));
   app.use("/api", webhookRouter(webhookController));
