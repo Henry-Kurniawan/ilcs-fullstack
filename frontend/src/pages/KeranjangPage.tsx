@@ -1,13 +1,18 @@
 import { useState } from "react";
-import { Link, Navigate } from "react-router";
+import { Link, Navigate, useNavigate } from "react-router";
+import { pembelianCheckoutResponseSchema } from "@musicpedia/shared";
+import { pesanKesalahan } from "../api.ts";
 import { formatRupiah } from "../format.ts";
 import { useAuth } from "../auth/AuthContext.tsx";
 import { useKeranjang } from "../keranjang/KeranjangContext.tsx";
+import { bukaSnap } from "../pembelian/snap.ts";
 
 export function KeranjangPage() {
   const { akun, memuat: memuatAkun } = useAuth();
-  const { keranjang, memuat, hapus } = useKeranjang();
+  const { keranjang, memuat, hapus, segarkan } = useKeranjang();
+  const navigate = useNavigate();
   const [menghapus, setMenghapus] = useState<number | null>(null);
+  const [checkout, setCheckout] = useState(false);
   const [pesan, setPesan] = useState<string | null>(null);
 
   if (memuatAkun) {
@@ -40,6 +45,42 @@ export function KeranjangPage() {
       );
     } finally {
       setMenghapus(null);
+    }
+  }
+
+  async function checkoutKeranjang() {
+    setCheckout(true);
+    setPesan(null);
+    try {
+      const res = await fetch("/api/pembelian", { method: "POST" });
+      if (!res.ok) {
+        setPesan(await pesanKesalahan(res));
+        return;
+      }
+      const data = pembelianCheckoutResponseSchema.parse(
+        await res.json(),
+      ).data;
+      await segarkan();
+
+      // Keranjang sudah menjadi satu Pembelian Menunggu Pembayaran. Snap
+      // dibuka dengan token yang tersimpan; bila ditutup, Pembelian tetap ada
+      // dan bisa dilanjutkan dari riwayat.
+      await bukaSnap(data.tokenSnap, {
+        onSuccess: () => navigate("/pembelian"),
+        onPending: () => navigate("/pembelian"),
+        onError: () => {
+          setPesan("Pembayaran gagal. Silakan coba lagi dari riwayat Pembelian.");
+        },
+        onClose: () => navigate("/pembelian"),
+      });
+    } catch (error) {
+      setPesan(
+        error instanceof Error
+          ? error.message
+          : "Gagal memulai pembayaran.",
+      );
+    } finally {
+      setCheckout(false);
     }
   }
 
@@ -109,14 +150,27 @@ export function KeranjangPage() {
             ))}
           </ul>
 
-          <div className="mt-4 flex items-center justify-between rounded-lg border border-stone-200 bg-white p-4">
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-stone-200 bg-white p-4">
             <span className="text-sm text-stone-600">
               {keranjang.jumlah} Lagu
             </span>
-            <span className="text-lg font-bold">
-              Total {formatRupiah(keranjang.total)}
-            </span>
+            <div className="flex flex-wrap items-center gap-4">
+              <span className="text-lg font-bold">
+                Total {formatRupiah(keranjang.total)}
+              </span>
+              <button
+                type="button"
+                onClick={() => void checkoutKeranjang()}
+                disabled={checkout}
+                className="rounded-md bg-amber-700 px-4 py-2 font-semibold text-white hover:bg-amber-600 disabled:opacity-60"
+              >
+                {checkout ? "Membuka pembayaran…" : "Checkout dan bayar"}
+              </button>
+            </div>
           </div>
+          <p className="mt-2 text-sm text-stone-600">
+            Semua Lagu di Keranjang dibayar dalam satu Pembelian lewat Midtrans.
+          </p>
 
           <Link
             to="/"

@@ -45,16 +45,24 @@ export function Header() {
                 </>
               ) : null}
               {akun.peran === "PELANGGAN" ? (
-                <Link
-                  to="/keranjang"
-                  aria-label={`Keranjang, ${keranjang?.jumlah ?? 0} Lagu`}
-                  className="flex items-center gap-1.5 font-medium text-slate-700 hover:underline"
-                >
-                  Keranjang
-                  <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-amber-700 px-1.5 py-0.5 text-xs font-semibold text-white">
-                    {keranjang?.jumlah ?? 0}
-                  </span>
-                </Link>
+                <>
+                  <Link
+                    to="/keranjang"
+                    aria-label={`Keranjang, ${keranjang?.jumlah ?? 0} Lagu`}
+                    className="flex items-center gap-1.5 font-medium text-slate-700 hover:underline"
+                  >
+                    Keranjang
+                    <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-amber-700 px-1.5 py-0.5 text-xs font-semibold text-white">
+                      {keranjang?.jumlah ?? 0}
+                    </span>
+                  </Link>
+                  <Link
+                    to="/pembelian"
+                    className="font-medium text-slate-700 hover:underline"
+                  >
+                    Pembelian
+                  </Link>
+                </>
               ) : null}
               <Link
                 to="/profil"
