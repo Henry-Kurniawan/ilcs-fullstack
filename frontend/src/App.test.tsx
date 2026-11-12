@@ -22,6 +22,8 @@ const lagu = {
   harga: 25000,
 };
 
+const laguAdmin = { ...lagu, tersembunyi: true };
+
 function stubFetch(akun: AkunUji | null = null) {
   vi.stubGlobal(
     "fetch",
@@ -29,14 +31,19 @@ function stubFetch(akun: AkunUji | null = null) {
       const url = String(input);
       const body = url.startsWith("/api/auth/me")
         ? { akun }
-        : url.startsWith("/api/genre")
-          ? { data: [lagu.genre] }
-          : url === `/api/lagu/${lagu.id}`
-            ? { data: lagu }
-            : {
-                data: [lagu],
-                meta: { halaman: 1, ukuran: 12, total: 1, totalHalaman: 1 },
-              };
+        : url.startsWith("/api/admin/lagu")
+          ? {
+              data: [laguAdmin],
+              meta: { halaman: 1, ukuran: 50, total: 1, totalHalaman: 1 },
+            }
+          : url.startsWith("/api/genre")
+            ? { data: [lagu.genre] }
+            : url === `/api/lagu/${lagu.id}`
+              ? { data: lagu }
+              : {
+                  data: [lagu],
+                  meta: { halaman: 1, ukuran: 12, total: 1, totalHalaman: 1 },
+                };
       return { ok: true, status: 200, json: async () => body } as Response;
     }),
   );
@@ -112,4 +119,28 @@ it("menampilkan email dan tombol keluar saat Pelanggan sudah masuk", async () =>
 
   expect(await screen.findByText("siti@example.com")).toBeTruthy();
   expect(screen.getByRole("button", { name: "Keluar" })).toBeTruthy();
+});
+
+it("menutup area Admin bagi Pengunjung", async () => {
+  stubFetch(null);
+  renderRute("/admin/lagu");
+
+  expect(
+    await screen.findByRole("heading", { name: "Halaman ini khusus Admin" }),
+  ).toBeTruthy();
+});
+
+it("menampilkan daftar Lagu termasuk yang disembunyikan untuk Admin", async () => {
+  stubFetch({
+    id: 2,
+    email: "admin@musicpedia.id",
+    peran: "ADMIN",
+    aktif: true,
+  });
+  renderRute("/admin/lagu");
+
+  expect(await screen.findByRole("heading", { name: "Kelola Lagu" })).toBeTruthy();
+  expect(await screen.findByText("Cahaya Pagi")).toBeTruthy();
+  expect(screen.getByText("Disembunyikan")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Tampilkan" })).toBeTruthy();
 });

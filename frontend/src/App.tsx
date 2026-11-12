@@ -1,4 +1,8 @@
 import { Route, Routes } from "react-router";
+import { AdminGenrePage } from "./admin/AdminGenrePage.tsx";
+import { AdminLaguFormPage } from "./admin/AdminLaguFormPage.tsx";
+import { AdminLaguPage } from "./admin/AdminLaguPage.tsx";
+import { PerluAdmin } from "./admin/PerluAdmin.tsx";
 import { AuthProvider } from "./auth/AuthContext.tsx";
 import { KatalogPage } from "./KatalogPage.tsx";
 import { LaguDetailPage } from "./LaguDetailPage.tsx";
@@ -15,6 +19,38 @@ export function App() {
           <Route path="lagu/:id" element={<LaguDetailPage />} />
           <Route path="registrasi" element={<RegisterPage />} />
           <Route path="masuk" element={<LoginPage />} />
+          <Route
+            path="admin/lagu"
+            element={
+              <PerluAdmin>
+                <AdminLaguPage />
+              </PerluAdmin>
+            }
+          />
+          <Route
+            path="admin/lagu/baru"
+            element={
+              <PerluAdmin>
+                <AdminLaguFormPage />
+              </PerluAdmin>
+            }
+          />
+          <Route
+            path="admin/lagu/:id/ubah"
+            element={
+              <PerluAdmin>
+                <AdminLaguFormPage />
+              </PerluAdmin>
+            }
+          />
+          <Route
+            path="admin/genre"
+            element={
+              <PerluAdmin>
+                <AdminGenrePage />
+              </PerluAdmin>
+            }
+          />
         </Route>
       </Routes>
     </AuthProvider>
