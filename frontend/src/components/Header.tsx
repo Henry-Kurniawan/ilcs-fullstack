@@ -68,6 +68,12 @@ export function Header() {
                   >
                     Pembelian
                   </Link>
+                  <Link
+                    to="/lagu-saya"
+                    className="font-medium text-slate-700 hover:underline"
+                  >
+                    Lagu Saya
+                  </Link>
                 </>
               ) : null}
               <Link
