@@ -13,18 +13,23 @@ Toko Lagu digital PT Musika Indonesia. Istilah domain ada di [GLOSSARY.md](GLOSS
 Alasan pemilihan: [ADR 0002](docs/adr/0002-tech-stack.md).
 
 ## Setup pengembangan
-Prasyarat: Node 22.18 atau lebih baru (target produksi Node 26), npm, Docker, dan ffmpeg untuk seed/unggah Lagu.
+Prasyarat: Docker dan Docker Compose. Backend dan frontend berjalan di dalam container, dan image pengembangan sudah membawa ffmpeg untuk seed serta unggahan Lagu, jadi host tidak perlu memasang Node atau ffmpeg.
 
 ```sh
-npm install
 cp .env.example .env   # opsional, nilai bawaan sudah cocok dengan Docker Compose
-npm run dev            # PostgreSQL, migrasi, backend (:3000), frontend (:5173)
+npm run dev            # PostgreSQL, backend (:3000), dan frontend (:5173) dalam satu perintah
 npm run seed           # Data Demo lengkap (lihat bagian berikut)
 ```
 
-Buka http://localhost:5173. Halaman awal menampilkan katalog Lagu dari `/api/lagu` di dalam header berisi status sesi (frontend memakai proxy Vite ke `/api`).
+`npm run dev` menjalankan `docker compose up --build -V` di depan terminal: log semua service tampil berselang-seling dan Ctrl+C menghentikan semuanya. Opsi `-V` memperbarui volume `node_modules` di dalam container, jadi setelah mengubah dependensi cukup jalankan ulang perintah yang sama. Buka http://localhost:5173. Halaman awal menampilkan katalog Lagu dari `/api/lagu` di dalam header berisi status sesi (frontend memakai proxy Vite ke `/api`, yang di dalam Compose menunjuk ke service `backend`).
 
-`npm run seed` membutuhkan ffmpeg. Bila ffmpeg tidak ada di PATH, arahkan `FFMPEG_PATH` ke biner statis (misalnya build statis di `.tools/ffmpeg`). Seed gagal dengan pesan yang menyebut `FFMPEG_PATH` bila biner tidak bisa dijalankan; audio tidak pernah di-commit ke repo.
+`npm test` dan `npm run seed` juga berjalan di dalam container. Audio Data Demo dan unggahan Admin tersimpan di `./backend/audio` pada host.
+
+Bila sudah punya Node dan ffmpeg di host dan ingin menjalankan backend serta frontend di luar container, pakai `npm install` lalu `npm run dev:local`. Versi host memakai PostgreSQL dari Compose dan `FFMPEG_PATH` dari `.env`; seed gagal dengan pesan yang menyebut `FFMPEG_PATH` bila biner tidak bisa dijalankan. Audio tidak pernah di-commit ke repo.
+
+Docker Compose menjalankan PostgreSQL dengan zona waktu `Asia/Jakarta` (variabel `TZ`, bawaan `Asia/Jakarta`) supaya tanggal Pembelian Data Demo dan Laporan Penjualan harian cocok dengan tanggal lokal. Ubah `TZ` di `.env` bila server memakai zona lain.
+
+`dockscope` (antarmuka monitoring container) tidak ikut `npm run dev`. Jalankan dengan `docker compose --profile tools up -d dockscope`, lalu buka http://localhost:4681.
 
 ## Akun dan sesi
 - Registrasi hanya membuat Pelanggan. Admin tidak pernah dibuat lewat registrasi.
@@ -310,11 +315,12 @@ Yang belum bisa diverifikasi di lingkungan ini: pembayaran Midtrans sandbox dan 
 ## Perintah
 | Perintah | Fungsi |
 | --- | --- |
-| `npm run dev` | Menjalankan PostgreSQL, migrasi, backend, dan frontend |
-| `npm test` | `tsc --noEmit` semua workspace, lalu Vitest (membutuhkan Docker untuk PostgreSQL) |
+| `npm run dev` | Build image pengembangan lalu jalankan PostgreSQL, backend, dan frontend di Compose |
+| `npm run dev:local` | Backend dan frontend di host (butuh Node dan ffmpeg), PostgreSQL tetap di Compose |
+| `npm test` | `tsc --noEmit` semua workspace, lalu Vitest di container backend (butuh Docker) |
 | `npm run build` | Build frontend ke `frontend/dist` |
-| `npm run migrate` | Menjalankan migrasi SQL di `backend/migrations` |
-| `npm run seed` | Menjalankan migrasi lalu mengisi seluruh Data Demo secara idempoten (butuh ffmpeg) |
+| `npm run migrate` | Menjalankan migrasi SQL di `backend/migrations` dari host |
+| `npm run seed` | Menjalankan migrasi lalu mengisi seluruh Data Demo secara idempoten di container backend |
 | `npm run db:up` | Menjalankan PostgreSQL saja |
 | `npm run prod:up` | Build dan jalankan stack produksi dengan `.env.production` |
 | `npm run prod:down` | Hentikan stack produksi (volume tetap) |
