@@ -5,6 +5,7 @@ import type {
   Lagu,
 } from "@musicpedia/shared";
 import type { Pool } from "../db.ts";
+import { buatMetaHalaman } from "../pagination.ts";
 import { daftarGenre, daftarLagu, detailLagu, trialLagu } from "./repository.ts";
 
 export interface KatalogService {
@@ -30,12 +31,7 @@ export function createKatalogService(pool: Pool): KatalogService {
 
       return {
         data: items,
-        meta: {
-          halaman: query.halaman,
-          ukuran: query.ukuran,
-          total,
-          totalHalaman: Math.ceil(total / query.ukuran),
-        },
+        meta: buatMetaHalaman(total, query.halaman, query.ukuran),
       };
     },
 

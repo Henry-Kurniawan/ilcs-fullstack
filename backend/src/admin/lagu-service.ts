@@ -12,6 +12,7 @@ import {
   hapusFileAudio,
   type HasilAudio,
 } from "../media/audio.ts";
+import { buatMetaHalaman } from "../pagination.ts";
 import {
   ambilBerkasLagu,
   ambilLaguAdmin,
@@ -69,12 +70,11 @@ export function createLaguAdminService({
       });
       return {
         data: items,
-        meta: {
-          halaman: permintaan.halaman,
-          ukuran: permintaan.ukuran,
+        meta: buatMetaHalaman(
           total,
-          totalHalaman: Math.ceil(total / permintaan.ukuran),
-        },
+          permintaan.halaman,
+          permintaan.ukuran,
+        ),
       };
     },
 

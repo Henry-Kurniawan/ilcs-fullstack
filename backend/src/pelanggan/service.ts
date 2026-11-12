@@ -5,6 +5,7 @@ import type {
   UpdatePelangganRequest,
 } from "@musicpedia/shared";
 import { AppError, isUniqueViolation } from "../errors.ts";
+import { buatMetaHalaman } from "../pagination.ts";
 import type { PelangganRepository } from "./repository.ts";
 
 export interface PelangganService {
@@ -33,12 +34,7 @@ export function createPelangganService(
 
       return {
         data: items,
-        meta: {
-          halaman: query.halaman,
-          ukuran: query.ukuran,
-          total,
-          totalHalaman: Math.ceil(total / query.ukuran),
-        },
+        meta: buatMetaHalaman(total, query.halaman, query.ukuran),
       };
     },
 
