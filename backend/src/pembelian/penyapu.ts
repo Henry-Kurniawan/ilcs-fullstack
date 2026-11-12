@@ -1,9 +1,9 @@
 import type { Pool } from "../db.ts";
+import { gagalkanPembelianKedaluwarsa } from "./repository.ts";
 
 /**
- * Menandai Pembelian Menunggu Pembayaran yang sudah lewat masa berlakunya
- * sebagai Gagal. Transisi hanya berlaku dari Menunggu Pembayaran sehingga
- * Pembelian Lunas atau Gagal tidak tersentuh.
+ * Menjalankan penyapu Pembelian kedaluwarsa. SQL-nya ada di repository agar
+ * semua akses tabel `pembelian` tetap lewat satu lapisan.
  *
  * Mengembalikan jumlah baris yang ditandai Gagal, untuk dicatat pemanggil.
  */
@@ -11,14 +11,7 @@ export async function sapuPembelianKedaluwarsa(
   pool: Pool,
   now: Date,
 ): Promise<number> {
-  const { rowCount } = await pool.query(
-    `UPDATE pembelian
-     SET status = 'GAGAL'
-     WHERE status = 'MENUNGGU_PEMBAYARAN'
-       AND kedaluwarsa_pada <= $1`,
-    [now],
-  );
-  return rowCount ?? 0;
+  return gagalkanPembelianKedaluwarsa(pool, now);
 }
 
 /** Jeda antarjalannya penyapu: lima menit. */

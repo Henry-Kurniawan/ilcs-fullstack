@@ -244,6 +244,25 @@ export async function transisiPembelian(
   return (rowCount ?? 0) > 0;
 }
 
+/**
+ * Menandai Pembelian Menunggu Pembayaran yang sudah lewat masa berlakunya
+ * sebagai Gagal. Hanya berlaku dari Menunggu Pembayaran sehingga Pembelian
+ * Lunas atau Gagal tidak tersentuh. Mengembalikan jumlah baris yang berubah.
+ */
+export async function gagalkanPembelianKedaluwarsa(
+  pool: Pool,
+  now: Date,
+): Promise<number> {
+  const { rowCount } = await pool.query(
+    `UPDATE pembelian
+     SET status = 'GAGAL'
+     WHERE status = 'MENUNGGU_PEMBAYARAN'
+       AND kedaluwarsa_pada <= $1`,
+    [now],
+  );
+  return rowCount ?? 0;
+}
+
 export async function daftarPembelian(
   pool: Pool,
   pelangganId: number,
