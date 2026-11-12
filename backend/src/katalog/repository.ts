@@ -1,4 +1,4 @@
-import type { Genre, Lagu } from "@musicpedia/shared";
+import type { Genre, Lagu, UrutanLagu } from "@musicpedia/shared";
 import type { Pool } from "../db.ts";
 
 export interface BarisLagu {
@@ -16,6 +16,7 @@ export interface BarisLagu {
 export interface FilterLagu {
   cari?: string;
   genre?: number;
+  urutan: UrutanLagu;
   limit: number;
   offset: number;
 }
@@ -60,12 +61,22 @@ export async function daftarLagu(
     `SELECT ${KOLOM_LAGU}
      FROM lagu l
      JOIN genre g ON g.id = l.genre_id
+     LEFT JOIN (
+       SELECT ip.lagu_id, count(*)::integer AS jumlah_lunas
+       FROM item_pembelian ip
+       JOIN pembelian p ON p.id = ip.pembelian_id
+       WHERE p.status = 'LUNAS'
+       GROUP BY ip.lagu_id
+     ) penjualan ON penjualan.lagu_id = l.id
      WHERE l.tersembunyi = false
        AND ($1::text IS NULL OR l.judul ILIKE $1 ESCAPE '\\' OR l.artis ILIKE $1 ESCAPE '\\')
        AND ($2::integer IS NULL OR l.genre_id = $2)
-     ORDER BY l.tanggal_rilis DESC, l.id DESC
+     ORDER BY
+       CASE WHEN $5::text = 'terlaris'
+            THEN COALESCE(penjualan.jumlah_lunas, 0) END DESC,
+       l.tanggal_rilis DESC, l.id DESC
      LIMIT $3 OFFSET $4`,
-    [cari, genre, filter.limit, filter.offset],
+    [cari, genre, filter.limit, filter.offset, filter.urutan],
   );
 
   const hitung = await pool.query<{ total: number }>(

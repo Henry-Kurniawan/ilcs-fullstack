@@ -58,6 +58,34 @@ async function buatLagu(lagu: FixtureLagu): Promise<number> {
   return rows[0]!.id;
 }
 
+async function buatAkunUji(email: string): Promise<number> {
+  const { rows } = await pool.query<{ id: number }>(
+    `INSERT INTO akun (email, password_hash, peran)
+     VALUES ($1, 'hash-uji', 'PELANGGAN')
+     RETURNING id`,
+    [email],
+  );
+  return rows[0]!.id;
+}
+
+async function catatPembelian(
+  pelangganId: number,
+  laguId: number,
+  status: "MENUNGGU_PEMBAYARAN" | "LUNAS" | "GAGAL",
+): Promise<void> {
+  const { rows } = await pool.query<{ id: number }>(
+    `INSERT INTO pembelian (pelanggan_id, status, total)
+     VALUES ($1, $2, 15000)
+     RETURNING id`,
+    [pelangganId, status],
+  );
+  await pool.query(
+    `INSERT INTO item_pembelian (pembelian_id, lagu_id, harga)
+     VALUES ($1, $2, 15000)`,
+    [rows[0]!.id, laguId],
+  );
+}
+
 describe("GET /api/lagu", () => {
   it("menampilkan Lagu yang tidak disembunyikan dengan urutan Terbaru", async () => {
     const pop = await buatGenre("Pop");
@@ -197,6 +225,62 @@ describe("GET /api/lagu", () => {
       .expect(400);
 
     expect(errorResponseSchema.parse(res.body).code).toBe("VALIDASI");
+  });
+
+  it("mengurutkan Terlaris berdasarkan jumlah Pembelian Lunas dengan seri memakai Terbaru", async () => {
+    const pop = await buatGenre("Pop");
+    const pelanggan = await buatAkunUji("pembeli@example.com");
+    const laris = await buatLagu({
+      judul: "Paling Laris",
+      artis: "Artis Laris",
+      genreId: pop,
+      tanggalRilis: "2020-01-01",
+    });
+    const sedang = await buatLagu({
+      judul: "Sedang",
+      artis: "Artis Sedang",
+      genreId: pop,
+      tanggalRilis: "2021-01-01",
+    });
+    const seriBaru = await buatLagu({
+      judul: "Seri Lebih Baru",
+      artis: "Artis Seri",
+      genreId: pop,
+      tanggalRilis: "2022-01-01",
+    });
+    const tanpaPenjualan = await buatLagu({
+      judul: "Tanpa Penjualan",
+      artis: "Artis Baru",
+      genreId: pop,
+      tanggalRilis: "2025-01-01",
+    });
+    const gagal = await buatLagu({
+      judul: "Pembelian Gagal",
+      artis: "Artis Gagal",
+      genreId: pop,
+      tanggalRilis: "2024-01-01",
+    });
+
+    await catatPembelian(pelanggan, laris, "LUNAS");
+    await catatPembelian(pelanggan, laris, "LUNAS");
+    await catatPembelian(pelanggan, sedang, "LUNAS");
+    await catatPembelian(pelanggan, seriBaru, "LUNAS");
+    await catatPembelian(pelanggan, gagal, "GAGAL");
+    await catatPembelian(pelanggan, tanpaPenjualan, "MENUNGGU_PEMBAYARAN");
+
+    const res = await request(app)
+      .get("/api/lagu")
+      .query({ urutan: "terlaris" })
+      .expect(200);
+    const body = daftarLaguResponseSchema.parse(res.body);
+
+    expect(body.data.map((lagu) => lagu.judul)).toEqual([
+      "Paling Laris",
+      "Seri Lebih Baru",
+      "Sedang",
+      "Tanpa Penjualan",
+      "Pembelian Gagal",
+    ]);
   });
 });
 

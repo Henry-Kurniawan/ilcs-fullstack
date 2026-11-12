@@ -137,6 +137,7 @@ export function KatalogPage() {
             className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm shadow-sm"
           >
             <option value="terbaru">Terbaru</option>
+            <option value="terlaris">Terlaris</option>
           </select>
         </div>
       </div>
