@@ -1,13 +1,10 @@
-import type { Peran } from "@musicpedia/shared";
+import type { Akun as AkunShared } from "@musicpedia/shared";
 
-export interface Akun {
-  id: number;
-  email: string;
-  nama: string;
-  peran: Peran;
-  aktif: boolean;
-}
+/**
+ * Bentuk Akun yang dipakai API berasal langsung dari skema zod `shared`, agar
+ * backend dan frontend tidak berbeda paham (ADR-0002).
+ */
+export type Akun = AkunShared;
 
-export interface AkunDenganPassword extends Akun {
-  passwordHash: string;
-}
+/** Akun ditambah hash kata sandi; hanya hidup di dalam backend. */
+export type AkunDenganPassword = Akun & { passwordHash: string };

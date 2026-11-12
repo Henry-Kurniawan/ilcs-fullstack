@@ -8,6 +8,7 @@ type AkunUji = {
   id: number;
   email: string;
   nama: string;
+  telepon: string | null;
   peran: "PELANGGAN" | "ADMIN";
   aktif: boolean;
 };
@@ -81,6 +82,7 @@ const laporanPenjualan = {
       artis: lagu.artis,
       pelanggan: pelanggan.nama,
       harga: lagu.harga,
+      total: lagu.harga,
     },
   ],
 };
@@ -196,6 +198,7 @@ it("menampilkan email dan tombol keluar saat Pelanggan sudah masuk", async () =>
     id: 1,
     email: "siti@example.com",
     nama: "Siti Rahma",
+    telepon: null,
     peran: "PELANGGAN",
     aktif: true,
   });
@@ -219,6 +222,7 @@ it("menampilkan daftar Lagu termasuk yang disembunyikan untuk Admin", async () =
     id: 2,
     email: "admin@musicpedia.id",
     nama: "Admin Musikapedia",
+    telepon: null,
     peran: "ADMIN",
     aktif: true,
   });
@@ -235,6 +239,7 @@ it("menampilkan jumlah Lagu di indikator Keranjang pada header", async () => {
     id: 1,
     email: "siti@example.com",
     nama: "Siti Rahma",
+    telepon: null,
     peran: "PELANGGAN",
     aktif: true,
   });
@@ -250,6 +255,7 @@ it("menampilkan halaman Keranjang Pelanggan", async () => {
     id: 1,
     email: "siti@example.com",
     nama: "Siti Rahma",
+    telepon: null,
     peran: "PELANGGAN",
     aktif: true,
   });
@@ -270,6 +276,7 @@ it("menampilkan riwayat Pembelian dengan status dan aksi melanjutkan", async () 
     id: 1,
     email: "siti@example.com",
     nama: "Siti Rahma",
+    telepon: null,
     peran: "PELANGGAN",
     aktif: true,
   });
@@ -303,6 +310,7 @@ it("menampilkan halaman profil Pelanggan", async () => {  stubFetch({
     id: 1,
     email: "siti@example.com",
     nama: "Siti Rahma",
+    telepon: null,
     peran: "PELANGGAN",
     aktif: true,
   });
@@ -310,6 +318,7 @@ it("menampilkan halaman profil Pelanggan", async () => {  stubFetch({
 
   expect(await screen.findByRole("heading", { name: "Profil" })).toBeTruthy();
   expect(screen.getByLabelText("Nama")).toBeTruthy();
+  expect(screen.getByLabelText("Telepon")).toBeTruthy();
   expect(screen.getByDisplayValue("Siti Rahma")).toBeTruthy();
   expect(screen.getByRole("button", { name: "Simpan" })).toBeTruthy();
   expect(screen.getByLabelText("Kata sandi lama")).toBeTruthy();
@@ -321,6 +330,7 @@ it("menampilkan area Admin Pelanggan bagi Admin", async () => {
     id: 1,
     email: "admin@musicpedia.id",
     nama: "",
+    telepon: null,
     peran: "ADMIN",
     aktif: true,
   });
@@ -334,18 +344,19 @@ it("menampilkan area Admin Pelanggan bagi Admin", async () => {
   expect(screen.getByRole("button", { name: "Nonaktifkan" })).toBeTruthy();
 });
 
-it("mengalihkan Pelanggan yang membuka area Admin", async () => {
+it("menutup area Admin Pelanggan bagi Pelanggan", async () => {
   stubFetch({
     id: 2,
     email: "siti@example.com",
     nama: "Siti Rahma",
+    telepon: null,
     peran: "PELANGGAN",
     aktif: true,
   });
   renderRute("/admin/pelanggan");
 
   expect(
-    await screen.findByRole("heading", { name: "Katalog Lagu" }),
+    await screen.findByRole("heading", { name: "Halaman ini khusus Admin" }),
   ).toBeTruthy();
 });
 
@@ -354,6 +365,7 @@ it("menampilkan Laporan Penjualan dengan tabel dan ekspor untuk Admin", async ()
     id: 2,
     email: "admin@musicpedia.id",
     nama: "Admin Musikapedia",
+    telepon: null,
     peran: "ADMIN",
     aktif: true,
   });
@@ -368,7 +380,7 @@ it("menampilkan Laporan Penjualan dengan tabel dan ekspor untuk Admin", async ()
   expect(screen.getByText("Rina Prasetya")).toBeTruthy();
   expect(screen.getByText("Siti Rahma")).toBeTruthy();
   expect(screen.getByText("05/11/2026 10:00")).toBeTruthy();
-  expect(screen.getByText(/^Total/).textContent).toContain("25.000");
+  expect(screen.getByText(/^Total:/).textContent).toContain("25.000");
   expect(screen.getByRole("link", { name: "Ekspor PDF" })).toBeTruthy();
   expect(screen.getByRole("link", { name: "Ekspor Excel" })).toBeTruthy();
   expect(
@@ -381,6 +393,7 @@ it("menampilkan halaman Lagu Saya dengan tombol unduh", async () => {
     id: 1,
     email: "siti@example.com",
     nama: "Siti Rahma",
+    telepon: null,
     peran: "PELANGGAN",
     aktif: true,
   });

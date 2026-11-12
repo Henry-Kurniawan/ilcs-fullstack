@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router";
 import { pembelianCheckoutResponseSchema } from "@musicpedia/shared";
-import { pesanKesalahan } from "../api.ts";
+import { apiJson } from "../api.ts";
 import { formatRupiah } from "../format.ts";
 import { useAuth } from "../auth/AuthContext.tsx";
 import { useKeranjang } from "../keranjang/KeranjangContext.tsx";
@@ -52,13 +52,10 @@ export function KeranjangPage() {
     setCheckout(true);
     setPesan(null);
     try {
-      const res = await fetch("/api/pembelian", { method: "POST" });
-      if (!res.ok) {
-        setPesan(await pesanKesalahan(res));
-        return;
-      }
-      const data = pembelianCheckoutResponseSchema.parse(
-        await res.json(),
+      const data = (
+        await apiJson("/api/pembelian", pembelianCheckoutResponseSchema, {
+          method: "POST",
+        })
       ).data;
       await segarkan();
 

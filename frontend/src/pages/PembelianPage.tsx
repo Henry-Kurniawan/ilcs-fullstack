@@ -6,7 +6,7 @@ import {
   type Pembelian,
   type StatusPembelian,
 } from "@musicpedia/shared";
-import { pesanKesalahan } from "../api.ts";
+import { apiJson, pesanDariError } from "../api.ts";
 import { useAuth } from "../auth/AuthContext.tsx";
 import { formatRupiah, formatTanggalWaktu } from "../format.ts";
 import { bukaSnap } from "../pembelian/snap.ts";
@@ -33,16 +33,15 @@ export function PembelianPage() {
   const segarkan = useCallback(async () => {
     setMemuat(true);
     try {
-      const res = await fetch("/api/pembelian");
-      if (!res.ok) {
-        setPesan(await pesanKesalahan(res));
-        return;
-      }
-      setPembelian(
-        daftarPembelianResponseSchema.parse(await res.json()).data,
+      const body = await apiJson("/api/pembelian", daftarPembelianResponseSchema);
+      setPembelian(body.data);
+    } catch (error) {
+      setPesan(
+        pesanDariError(
+          error,
+          "Tidak bisa memuat riwayat Pembelian. Coba lagi.",
+        ),
       );
-    } catch {
-      setPesan("Tidak bisa memuat riwayat Pembelian. Coba lagi.");
     } finally {
       setMemuat(false);
     }
@@ -75,15 +74,12 @@ export function PembelianPage() {
     setMelanjutkan(id);
     setPesan(null);
     try {
-      const res = await fetch(`/api/pembelian/${id}/lanjutkan`, {
-        method: "POST",
-      });
-      if (!res.ok) {
-        setPesan(await pesanKesalahan(res));
-        return;
-      }
-      const data = pembelianCheckoutResponseSchema.parse(
-        await res.json(),
+      const data = (
+        await apiJson(
+          `/api/pembelian/${id}/lanjutkan`,
+          pembelianCheckoutResponseSchema,
+          { method: "POST" },
+        )
       ).data;
       await bukaSnap(data.tokenSnap, {
         onSuccess: () => void segarkan(),

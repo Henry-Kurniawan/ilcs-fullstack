@@ -3,12 +3,12 @@ import { useAuth } from "../auth/AuthContext.tsx";
 import { useKeranjang } from "../keranjang/KeranjangContext.tsx";
 
 export function Header() {
-  const { akun, memuat, logout } = useAuth();
+  const { akun, memuat, keluar: keluarAkun } = useAuth();
   const { keranjang } = useKeranjang();
   const navigate = useNavigate();
 
   async function keluar() {
-    await logout();
+    await keluarAkun();
     navigate("/");
   }
 

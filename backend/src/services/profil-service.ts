@@ -11,8 +11,8 @@ export interface ProfilService {
 
 export function createProfilService(repo: AkunRepository): ProfilService {
   return {
-    async ubahProfil(akunId, { nama }) {
-      const akun = await repo.updateNama(akunId, nama);
+    async ubahProfil(akunId, input) {
+      const akun = await repo.updateProfil(akunId, input);
       if (!akun) {
         throw new AppError(404, "AKUN_TIDAK_DITEMUKAN", "Akun tidak ditemukan.");
       }

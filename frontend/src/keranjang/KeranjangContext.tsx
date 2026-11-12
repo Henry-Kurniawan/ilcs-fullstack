@@ -10,7 +10,7 @@ import {
   keranjangResponseSchema,
   type Keranjang,
 } from "@musicpedia/shared";
-import { pesanKesalahan } from "../api.ts";
+import { apiJson } from "../api.ts";
 import { useAuth } from "../auth/AuthContext.tsx";
 
 interface KeranjangState {
@@ -36,9 +36,7 @@ export function KeranjangProvider({ children }: { children: ReactNode }) {
 
     setMemuat(true);
     try {
-      const res = await fetch("/api/keranjang");
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const body = keranjangResponseSchema.parse(await res.json());
+      const body = await apiJson("/api/keranjang", keranjangResponseSchema);
       setKeranjang(body.data);
     } catch {
       setKeranjang(null);
@@ -52,24 +50,20 @@ export function KeranjangProvider({ children }: { children: ReactNode }) {
   }, [segarkan]);
 
   const tambah = useCallback(async (laguId: number) => {
-    const res = await fetch("/api/keranjang", {
+    const body = await apiJson("/api/keranjang", keranjangResponseSchema, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ laguId }),
     });
-    if (!res.ok) {
-      throw new Error(await pesanKesalahan(res));
-    }
-    const body = keranjangResponseSchema.parse(await res.json());
     setKeranjang(body.data);
   }, []);
 
   const hapus = useCallback(async (laguId: number) => {
-    const res = await fetch(`/api/keranjang/${laguId}`, { method: "DELETE" });
-    if (!res.ok) {
-      throw new Error(await pesanKesalahan(res));
-    }
-    const body = keranjangResponseSchema.parse(await res.json());
+    const body = await apiJson(
+      `/api/keranjang/${laguId}`,
+      keranjangResponseSchema,
+      { method: "DELETE" },
+    );
     setKeranjang(body.data);
   }, []);
 

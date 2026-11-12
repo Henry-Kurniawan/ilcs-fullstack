@@ -16,7 +16,6 @@ export interface LaguCheckout {
   judul: string;
   artis: string;
   harga: number;
-  tersembunyi: boolean;
 }
 
 export interface StatusKepemilikan {
@@ -37,6 +36,25 @@ export async function kunciPelanggan(
   return rows[0] ?? null;
 }
 
+/**
+ * Membuang baris Keranjang yang Lagunya sudah disembunyikan Admin. Lagu itu
+ * tidak tampil di UI dan tidak bisa dihapus Pelanggan, jadi checkout harus
+ * membersihkannya sendiri agar tidak menghalangi sisa Keranjang.
+ */
+export async function buangLaguTersembunyiDariKeranjang(
+  db: Db,
+  pelangganId: number,
+): Promise<void> {
+  await db.query(
+    `DELETE FROM keranjang k
+     USING lagu l
+     WHERE l.id = k.lagu_id
+       AND k.pelanggan_id = $1
+       AND l.tersembunyi = true`,
+    [pelangganId],
+  );
+}
+
 export async function laguDiKeranjang(
   db: Db,
   pelangganId: number,
@@ -46,12 +64,11 @@ export async function laguDiKeranjang(
     judul: string;
     artis: string;
     harga: number;
-    tersembunyi: boolean;
   }>(
-    `SELECT l.id AS lagu_id, l.judul, l.artis, l.harga, l.tersembunyi
+    `SELECT l.id AS lagu_id, l.judul, l.artis, l.harga
      FROM keranjang k
      JOIN lagu l ON l.id = k.lagu_id
-     WHERE k.pelanggan_id = $1
+     WHERE k.pelanggan_id = $1 AND l.tersembunyi = false
      ORDER BY k.dibuat_pada ASC, l.id ASC`,
     [pelangganId],
   );
@@ -61,7 +78,6 @@ export async function laguDiKeranjang(
     judul: baris.judul,
     artis: baris.artis,
     harga: baris.harga,
-    tersembunyi: baris.tersembunyi,
   }));
 }
 
@@ -226,6 +242,25 @@ export async function transisiPembelian(
     [pembelianId, statusBaru, dibayarPada],
   );
   return (rowCount ?? 0) > 0;
+}
+
+/**
+ * Menandai Pembelian Menunggu Pembayaran yang sudah lewat masa berlakunya
+ * sebagai Gagal. Hanya berlaku dari Menunggu Pembayaran sehingga Pembelian
+ * Lunas atau Gagal tidak tersentuh. Mengembalikan jumlah baris yang berubah.
+ */
+export async function gagalkanPembelianKedaluwarsa(
+  pool: Pool,
+  now: Date,
+): Promise<number> {
+  const { rowCount } = await pool.query(
+    `UPDATE pembelian
+     SET status = 'GAGAL'
+     WHERE status = 'MENUNGGU_PEMBAYARAN'
+       AND kedaluwarsa_pada <= $1`,
+    [now],
+  );
+  return rowCount ?? 0;
 }
 
 export async function daftarPembelian(

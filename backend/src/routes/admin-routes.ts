@@ -40,10 +40,6 @@ export function createAdminRouter({
   const genre = createGenreAdminController(createGenreAdminService(pool));
   const laporan = createLaporanController(createLaporanService(pool));
 
-  router.get("/ping", (_req, res) => {
-    res.json({ status: "ok" });
-  });
-
   router.use(
     "/pelanggan",
     createAdminPelangganRouter(pelangganController, authMiddleware),

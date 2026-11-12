@@ -16,6 +16,12 @@ _Avoid_: Member, customer, user, akun
 Pegawai PT Musika Indonesia yang mengelola katalog, data Pelanggan, dan Laporan Penjualan. Akunnya tidak dibuat lewat registrasi.
 _Avoid_: Operator, administrator sistem
 
+## Demo
+
+**Data Demo**:
+Isi database dan audio contoh yang disiapkan `npm run seed` untuk mendemokan MusicPedia: Admin, Pelanggan, katalog Lagu, dan Pembelian di ketiga status. Seed ulang memulihkan Data Demo tanpa membuat duplikat.
+_Avoid_: Seed data, fixture, data contoh
+
 ## Katalog
 
 **Lagu**:

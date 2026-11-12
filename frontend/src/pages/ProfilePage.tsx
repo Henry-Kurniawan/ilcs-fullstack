@@ -4,13 +4,13 @@ import {
   ubahPasswordRequestSchema,
   updateProfilRequestSchema,
 } from "@musicpedia/shared";
-import { pesanKesalahan } from "../api.ts";
+import { apiFetch, pesanDariError } from "../api.ts";
 import { useAuth } from "../auth/AuthContext.tsx";
 
 const kelasInput = "mt-1 w-full rounded-md border border-slate-300 px-3 py-2";
 
 export function ProfilePage() {
-  const { akun, memuat, refresh } = useAuth();
+  const { akun, memuat, segarkan } = useAuth();
   const [pesanProfil, setPesanProfil] = useState<string | null>(null);
   const [pesanPassword, setPesanPassword] = useState<string | null>(null);
   const [menyimpanProfil, setMenyimpanProfil] = useState(false);
@@ -41,19 +41,17 @@ export function ProfilePage() {
 
     setMenyimpanProfil(true);
     try {
-      const res = await fetch("/api/profil", {
+      await apiFetch("/api/profil", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(parsed.data),
       });
-      if (!res.ok) {
-        setPesanProfil(await pesanKesalahan(res));
-        return;
-      }
-      await refresh();
+      await segarkan();
       setPesanProfil("Profil tersimpan.");
-    } catch {
-      setPesanProfil("Tidak bisa menghubungi server. Coba lagi.");
+    } catch (error) {
+      setPesanProfil(
+        pesanDariError(error, "Tidak bisa menghubungi server. Coba lagi."),
+      );
     } finally {
       setMenyimpanProfil(false);
     }
@@ -73,19 +71,17 @@ export function ProfilePage() {
 
     setMenggantiPassword(true);
     try {
-      const res = await fetch("/api/profil/password", {
+      await apiFetch("/api/profil/password", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(parsed.data),
       });
-      if (!res.ok) {
-        setPesanPassword(await pesanKesalahan(res));
-        return;
-      }
       form.reset();
       setPesanPassword("Kata sandi berhasil diganti.");
-    } catch {
-      setPesanPassword("Tidak bisa menghubungi server. Coba lagi.");
+    } catch (error) {
+      setPesanPassword(
+        pesanDariError(error, "Tidak bisa menghubungi server. Coba lagi."),
+      );
     } finally {
       setMenggantiPassword(false);
     }
@@ -135,6 +131,25 @@ export function ProfilePage() {
               maxLength={100}
               className={kelasInput}
             />
+          </div>
+
+          <div>
+            <label htmlFor="telepon" className="block text-sm font-medium">
+              Telepon
+            </label>
+            <input
+              key={akun.telepon ?? ""}
+              id="telepon"
+              name="telepon"
+              type="tel"
+              autoComplete="tel"
+              defaultValue={akun.telepon ?? ""}
+              maxLength={30}
+              className={kelasInput}
+            />
+            <p className="mt-1 text-sm text-slate-500">
+              Opsional. Dipakai Admin untuk menghubungi Anda bila perlu.
+            </p>
           </div>
 
           {pesanProfil ? (

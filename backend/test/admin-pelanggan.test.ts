@@ -150,6 +150,7 @@ describe("PATCH /api/admin/pelanggan/:id", () => {
       id,
       email: "siti.rahma@example.com",
       nama: "Siti Rahma",
+      telepon: null,
     });
   });
 

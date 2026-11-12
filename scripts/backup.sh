@@ -8,6 +8,8 @@
 #   BACKUP_DIR            direktori tujuan lokal (bawaan ./backups)
 #   BACKUP_KEEP_DAYS      retensi backup lokal (bawaan 14)
 #   BACKUP_RCLONE_REMOTE  remote rclone tujuan, mis. "offsite:musicpedia-backup"
+#   BACKUP_OFFSITE_DIR    direktori off-site alternatif (mount NFS/SSHFS host lain)
+#   NODE_ENV              "production" mewajibkan salah satu tujuan off-site
 #   AUDIO_HOST_DIR        isi bila audio tidak ada di container (uji dev)
 #   COMPOSE_FILE          bawaan docker-compose.prod.yml
 #   ENV_FILE              bawaan .env.production
@@ -34,12 +36,23 @@ BACKEND_SERVICE="${BACKEND_SERVICE:-backend}"
 BACKUP_DIR="${BACKUP_DIR:-$ROOT/backups}"
 BACKUP_KEEP_DAYS="${BACKUP_KEEP_DAYS:-14}"
 BACKUP_RCLONE_REMOTE="${BACKUP_RCLONE_REMOTE:-}"
+BACKUP_OFFSITE_DIR="${BACKUP_OFFSITE_DIR:-}"
+NODE_ENV="${NODE_ENV:-development}"
 AUDIO_HOST_DIR="${AUDIO_HOST_DIR:-}"
 
 log() { printf '[backup %s] %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >&2; }
 die() { log "GAGAL: $*"; exit 1; }
 
 [[ "$BACKUP_KEEP_DAYS" =~ ^[0-9]+$ ]] || die "BACKUP_KEEP_DAYS harus bilangan bulat."
+
+# NFR Security #3: backup produksi harus punya salinan di lokasi yang berbeda
+# dengan server. Tanpa tujuan off-site, script berhenti sebelum menyentuh
+# database agar tidak diam-diam hanya menumpuk backup di disk server yang sama.
+if [[ "$NODE_ENV" == "production" \
+  && -z "$BACKUP_RCLONE_REMOTE" \
+  && -z "$BACKUP_OFFSITE_DIR" ]]; then
+  die "Di produksi, backup wajib disalin ke lokasi berbeda dengan server. Isi BACKUP_RCLONE_REMOTE (misalnya offsite:musicpedia-backup) atau BACKUP_OFFSITE_DIR (direktori NFS/SSHFS di host lain) di .env.production."
+fi
 command -v docker >/dev/null 2>&1 || die "docker tidak ditemukan."
 [[ -f "$COMPOSE_FILE" ]] || die "Compose file $COMPOSE_FILE tidak ditemukan."
 
@@ -107,6 +120,14 @@ fi
 mv "$tmp" "$dest"
 tmp=""
 log "Backup tersimpan di $dest"
+
+if [[ -n "$BACKUP_OFFSITE_DIR" ]]; then
+  mkdir -p "$BACKUP_OFFSITE_DIR" \
+    || die "BACKUP_OFFSITE_DIR $BACKUP_OFFSITE_DIR tidak dapat dibuat."
+  cp -a "$dest" "${BACKUP_OFFSITE_DIR%/}/" \
+    || die "Gagal menyalin backup ke BACKUP_OFFSITE_DIR $BACKUP_OFFSITE_DIR."
+  log "Salinan off-site tersimpan di ${BACKUP_OFFSITE_DIR%/}/$(basename "$dest")"
+fi
 
 if [[ -n "$BACKUP_RCLONE_REMOTE" ]]; then
   command -v rclone >/dev/null 2>&1 \

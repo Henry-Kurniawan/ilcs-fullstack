@@ -44,5 +44,8 @@ export async function laporanPenjualan(
     artis: baris.artis,
     pelanggan: baris.pelanggan_nama || baris.pelanggan_email,
     harga: baris.harga,
+    // Satu Item Pembelian memuat tepat satu Lagu, sehingga total baris
+    // sama dengan harga Lagu itu saat checkout.
+    total: baris.harga,
   }));
 }

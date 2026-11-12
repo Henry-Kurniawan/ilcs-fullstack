@@ -1,24 +1,21 @@
 import type { Lagu } from "@musicpedia/shared";
 import type { Pool } from "../db.ts";
+import type { KepemilikanLagu } from "../domain/kepemilikan.ts";
 import {
   KOLOM_LAGU,
   keLagu,
   type BarisLagu,
 } from "../katalog/repository.ts";
 
-export interface StatusPembelianLagu {
-  dimiliki: boolean;
-  menungguPembayaran: boolean;
-}
-
 export interface KeranjangRepository {
   daftar(pelangganId: number): Promise<Lagu[]>;
   tambah(pelangganId: number, laguId: number): Promise<void>;
   hapus(pelangganId: number, laguId: number): Promise<void>;
+  buangLaguTersembunyi(pelangganId: number): Promise<void>;
   statusPembelian(
     pelangganId: number,
     laguId: number,
-  ): Promise<StatusPembelianLagu>;
+  ): Promise<KepemilikanLagu>;
 }
 
 export function createKeranjangRepository(pool: Pool): KeranjangRepository {
@@ -54,6 +51,19 @@ export function createKeranjangRepository(pool: Pool): KeranjangRepository {
       );
     },
 
+    async buangLaguTersembunyi(pelangganId) {
+      // Baris Keranjang untuk Lagu tersembunyi tidak boleh menggantung: ia
+      // tidak tampil di UI sehingga Pelanggan tidak bisa menghapusnya sendiri.
+      await pool.query(
+        `DELETE FROM keranjang k
+         USING lagu l
+         WHERE l.id = k.lagu_id
+           AND k.pelanggan_id = $1
+           AND l.tersembunyi = true`,
+        [pelangganId],
+      );
+    },
+
     async statusPembelian(pelangganId, laguId) {
       const { rows } = await pool.query<{
         lunas: boolean | null;
@@ -68,8 +78,8 @@ export function createKeranjangRepository(pool: Pool): KeranjangRepository {
       );
 
       return {
-        dimiliki: rows[0]?.lunas === true,
-        menungguPembayaran: rows[0]?.menunggu === true,
+        lunas: rows[0]?.lunas === true,
+        menunggu: rows[0]?.menunggu === true,
       };
     },
   };

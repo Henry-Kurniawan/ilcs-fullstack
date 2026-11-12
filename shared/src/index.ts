@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+export { formatTanggalBayarJakarta } from "./tanggal.ts";
+
 export const healthResponseSchema = z.object({
   status: z.literal("ok"),
   database: z.literal("up"),
@@ -15,6 +17,7 @@ export const profilSchema = z.object({
   id: z.number().int().positive(),
   email: z.email(),
   nama: z.string(),
+  telepon: z.string().nullable(),
 });
 
 export type Profil = z.infer<typeof profilSchema>;
@@ -42,6 +45,14 @@ const namaSchema = z
   .trim()
   .min(1, "Nama wajib diisi.")
   .max(100, "Nama maksimal 100 karakter.");
+
+const teleponSchema = z
+  .string()
+  .trim()
+  .max(30, "Telepon maksimal 30 karakter.")
+  .regex(/^[0-9+()\-\s]*$/, "Nomor telepon tidak valid.")
+  .transform((nilai) => (nilai === "" ? null : nilai))
+  .nullable();
 
 export const registerRequestSchema = z.strictObject({
   email: emailSchema,
@@ -75,9 +86,14 @@ export const profilResponseSchema = z.object({
 
 export type ProfilResponse = z.infer<typeof profilResponseSchema>;
 
-export const updateProfilRequestSchema = z.strictObject({
-  nama: namaSchema,
-});
+export const updateProfilRequestSchema = z
+  .strictObject({
+    nama: namaSchema.optional(),
+    telepon: teleponSchema.optional(),
+  })
+  .refine((data) => data.nama !== undefined || data.telepon !== undefined, {
+    message: "Isi minimal nama atau telepon.",
+  });
 
 export type UpdateProfilRequest = z.infer<typeof updateProfilRequestSchema>;
 
@@ -418,6 +434,8 @@ export const barisLaporanSchema = z.object({
   artis: z.string().min(1),
   pelanggan: z.string().min(1),
   harga: z.number().int().nonnegative(),
+  // Satu Item Pembelian adalah satu Lagu, jadi total baris sama dengan harga.
+  total: z.number().int().nonnegative(),
 });
 
 export type BarisLaporan = z.infer<typeof barisLaporanSchema>;

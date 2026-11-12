@@ -1,11 +1,11 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
 import { registerRequestSchema } from "@musicpedia/shared";
-import { pesanKesalahan } from "../api.ts";
+import { apiFetch, pesanDariError } from "../api.ts";
 import { useAuth } from "../auth/AuthContext.tsx";
 
 export function RegisterPage() {
-  const { refresh } = useAuth();
+  const { segarkan } = useAuth();
   const navigate = useNavigate();
   const [pesan, setPesan] = useState<string | null>(null);
   const [mengirim, setMengirim] = useState(false);
@@ -23,19 +23,17 @@ export function RegisterPage() {
 
     setMengirim(true);
     try {
-      const res = await fetch("/api/auth/register", {
+      await apiFetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(parsed.data),
       });
-      if (!res.ok) {
-        setPesan(await pesanKesalahan(res));
-        return;
-      }
-      await refresh();
+      await segarkan();
       navigate("/");
-    } catch {
-      setPesan("Tidak bisa menghubungi server. Coba lagi.");
+    } catch (error) {
+      setPesan(
+        pesanDariError(error, "Tidak bisa menghubungi server. Coba lagi."),
+      );
     } finally {
       setMengirim(false);
     }

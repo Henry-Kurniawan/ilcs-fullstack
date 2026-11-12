@@ -2,6 +2,7 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import { tambahKeranjangRequestSchema } from "@musicpedia/shared";
 import { AppError } from "../errors.ts";
+import { ambilId, pelangganId } from "../http.ts";
 import type { createAuthMiddleware } from "../middleware/auth.ts";
 import type { KeranjangService } from "./service.ts";
 
@@ -16,14 +17,6 @@ export function createKeranjangController({
 }: {
   service: KeranjangService;
 }): KeranjangController {
-  function pelangganId(req: Request): number {
-    const akun = req.currentAkun;
-    if (!akun) {
-      throw new AppError(401, "BELUM_MASUK", "Silakan masuk terlebih dahulu.");
-    }
-    return akun.id;
-  }
-
   return {
     async lihat(req, res) {
       res.json({ data: await service.lihat(pelangganId(req)) });
@@ -39,10 +32,7 @@ export function createKeranjangController({
     },
 
     async hapus(req, res) {
-      const laguId = Number(req.params.laguId);
-      if (!Number.isInteger(laguId) || laguId <= 0) {
-        throw new AppError(400, "VALIDASI", "Id Lagu tidak valid.");
-      }
+      const laguId = ambilId(req, "Id Lagu tidak valid.", "laguId");
       res.json({ data: await service.hapus(pelangganId(req), laguId) });
     },
   };

@@ -1,28 +1,13 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
 import { AppError } from "../errors.ts";
+import { ambilId, pelangganId } from "../http.ts";
 import type { Pool } from "../db.ts";
 import { pathAudio } from "../media/audio.ts";
 import { kirimAudio } from "../media/trial.ts";
 import { contentDispositionUnduhan } from "../media/unduhan.ts";
 import type { createAuthMiddleware } from "../middleware/auth.ts";
 import { ambilLaguSaya, ambilUnduhan } from "./service.ts";
-
-function pelangganId(req: Request): number {
-  const akun = req.currentAkun;
-  if (!akun) {
-    throw new AppError(401, "BELUM_MASUK", "Silakan masuk terlebih dahulu.");
-  }
-  return akun.id;
-}
-
-function ambilIdLagu(nilai: string): number {
-  const id = Number(nilai);
-  if (!Number.isInteger(id) || id <= 0) {
-    throw new AppError(400, "VALIDASI", "Id Lagu tidak valid.");
-  }
-  return id;
-}
 
 export interface UnduhanController {
   laguSaya(req: Request, res: Response): Promise<void>;
@@ -45,7 +30,7 @@ export function createUnduhanController({
       const berkas = await ambilUnduhan(
         pool,
         pelangganId(req),
-        ambilIdLagu(String(req.params.id)),
+        ambilId(req, "Id Lagu tidak valid."),
       );
       const terkirim = await kirimAudio(
         req,

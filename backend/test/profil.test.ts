@@ -32,6 +32,7 @@ describe("GET /api/profil", () => {
       id: expect.any(Number),
       email: siti.email,
       nama: "",
+      telepon: null,
     });
   });
 
@@ -78,6 +79,42 @@ describe("PATCH /api/profil", () => {
       .expect(200);
 
     expect(res.body.profil.nama).toBe("Siti Rahma");
+  });
+
+  it("menyimpan dan mengosongkan telepon Pelanggan", async () => {
+    const agent = await daftarDanMasuk(siti);
+
+    const tersimpan = await agent
+      .patch("/api/profil")
+      .send({ telepon: "  0812-3456-7890 " })
+      .expect(200);
+    expect(tersimpan.body.profil.telepon).toBe("0812-3456-7890");
+    // Nama tidak ikut berubah saat hanya telepon yang dikirim.
+    expect(tersimpan.body.profil.nama).toBe("");
+
+    const me = await agent.get("/api/auth/me").expect(200);
+    expect(me.body.akun.telepon).toBe("0812-3456-7890");
+
+    const dikosongkan = await agent
+      .patch("/api/profil")
+      .send({ telepon: "" })
+      .expect(200);
+    expect(dikosongkan.body.profil.telepon).toBeNull();
+
+    const sesudah = await agent.get("/api/profil").expect(200);
+    expect(sesudah.body.profil.telepon).toBeNull();
+  });
+
+  it("menolak nomor telepon yang tidak valid", async () => {
+    const agent = await daftarDanMasuk(siti);
+
+    const res = await agent
+      .patch("/api/profil")
+      .send({ telepon: "bukan nomor" })
+      .expect(400);
+
+    expect(res.body.code).toBe("VALIDASI");
+    expect(res.body.error).toBe("Nomor telepon tidak valid.");
   });
 
   it("menolak nama kosong dengan pesan berbahasa Indonesia", async () => {

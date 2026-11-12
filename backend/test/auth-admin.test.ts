@@ -38,8 +38,10 @@ describe("Seed Admin", () => {
 });
 
 describe("Otorisasi area Admin", () => {
+  const ENDPOINT_ADMIN = "/api/admin/lagu";
+
   it("menolak Pengunjung tanpa sesi", async () => {
-    const res = await request(app).get("/api/admin/ping").expect(401);
+    const res = await request(app).get(ENDPOINT_ADMIN).expect(401);
     expect(res.body.code).toBe("BELUM_MASUK");
   });
 
@@ -47,7 +49,7 @@ describe("Otorisasi area Admin", () => {
     const agent = request.agent(app);
     await agent.post("/api/auth/register").send(pelanggan).expect(201);
 
-    const res = await agent.get("/api/admin/ping").expect(403);
+    const res = await agent.get(ENDPOINT_ADMIN).expect(403);
     expect(res.body.code).toBe("AKSES_DITOLAK");
   });
 
@@ -56,7 +58,15 @@ describe("Otorisasi area Admin", () => {
     const agent = request.agent(app);
     await agent.post("/api/auth/login").send(admin).expect(200);
 
-    const res = await agent.get("/api/admin/ping").expect(200);
-    expect(res.body).toEqual({ status: "ok" });
+    const res = await agent.get(ENDPOINT_ADMIN).expect(200);
+    expect(res.body).toEqual({
+      data: [],
+      meta: {
+        halaman: 1,
+        ukuran: 50,
+        total: 0,
+        totalHalaman: 0,
+      },
+    });
   });
 });

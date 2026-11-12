@@ -152,6 +152,10 @@ describe("GET /api/admin/laporan", () => {
       "Cahaya Pagi",
       "Jalan Pulang",
     ]);
+    // Satu Item Pembelian adalah satu Lagu, jadi total tiap baris = harga.
+    for (const baris of body.data) {
+      expect(baris.total).toBe(baris.harga);
+    }
     expect(body.data[2]).toEqual({
       pembelianId: expect.any(Number),
       tanggalBayar: "2026-11-06T03:00:00.000Z",
@@ -159,6 +163,7 @@ describe("GET /api/admin/laporan", () => {
       artis: "Bara Nusantara",
       pelanggan: "Siti Rahma",
       harga: 30000,
+      total: 30000,
     });
   });
 
@@ -421,16 +426,18 @@ describe("Ekspor Laporan Penjualan", () => {
       "Artis",
       "Pelanggan",
       "Harga",
+      "Total",
     ]);
     expect(sheet!.getRow(2).getCell(1).text).toBe("05/11/2026 10:00");
     expect(sheet!.getRow(2).getCell(2).value).toBe("Cahaya Pagi");
     expect(sheet!.getRow(2).getCell(3).value).toBe("Rina Prasetya");
     expect(sheet!.getRow(2).getCell(4).value).toBe("Siti Rahma");
     expect(sheet!.getRow(2).getCell(5).value).toBe(25000);
+    expect(sheet!.getRow(2).getCell(6).value).toBe(25000);
 
     const semuaTeks = sheet!.getSheetValues().flat().join(" ");
     expect(semuaTeks).not.toContain("Lagu Gagal");
-    expect(sheet!.getRow(3).getCell(5).value).toBe(25000);
+    expect(sheet!.getRow(3).getCell(6).value).toBe(25000);
   });
 });
 

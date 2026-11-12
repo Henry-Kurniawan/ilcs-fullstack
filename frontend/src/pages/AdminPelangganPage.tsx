@@ -1,5 +1,4 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Navigate } from "react-router";
 import {
   daftarPelangganResponseSchema,
   pelangganResponseSchema,
@@ -7,15 +6,13 @@ import {
   type DaftarPelangganResponse,
   type Pelanggan,
 } from "@musicpedia/shared";
-import { pesanKesalahan } from "../api.ts";
-import { useAuth } from "../auth/AuthContext.tsx";
+import { apiJson, pesanDariError } from "../api.ts";
 
 type Status = "memuat" | "siap" | "gagal";
 
 const kelasInput = "mt-1 w-full rounded-md border border-slate-300 px-3 py-2";
 
 export function AdminPelangganPage() {
-  const { akun, memuat } = useAuth();
   const [cariInput, setCariInput] = useState("");
   const [cari, setCari] = useState("");
   const [halaman, setHalaman] = useState(1);
@@ -27,22 +24,18 @@ export function AdminPelangganPage() {
   const [memprosesId, setMemprosesId] = useState<number | null>(null);
 
   useEffect(() => {
-    if (akun?.peran !== "ADMIN") return;
-
     const controller = new AbortController();
     const params = new URLSearchParams({ halaman: String(halaman) });
     if (cari) params.set("cari", cari);
 
     setStatus("memuat");
-    fetch(`/api/admin/pelanggan?${params.toString()}`, {
-      signal: controller.signal,
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
+    apiJson(
+      `/api/admin/pelanggan?${params.toString()}`,
+      daftarPelangganResponseSchema,
+      { signal: controller.signal },
+    )
       .then((body) => {
-        setHasil(daftarPelangganResponseSchema.parse(body));
+        setHasil(body);
         setStatus("siap");
       })
       .catch(() => {
@@ -50,18 +43,7 @@ export function AdminPelangganPage() {
       });
 
     return () => controller.abort();
-  }, [akun?.peran, cari, halaman]);
-
-  if (memuat) {
-    return (
-      <main className="mx-auto max-w-5xl px-6 py-12">
-        <p className="text-slate-600">Memuat…</p>
-      </main>
-    );
-  }
-
-  if (!akun) return <Navigate to="/masuk" replace />;
-  if (akun.peran !== "ADMIN") return <Navigate to="/" replace />;
+  }, [cari, halaman]);
 
   function kirimCari(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -96,21 +78,22 @@ export function AdminPelangganPage() {
 
     setMenyimpan(true);
     try {
-      const res = await fetch(`/api/admin/pelanggan/${sunting.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(parsed.data),
-      });
-      if (!res.ok) {
-        setPesan(await pesanKesalahan(res));
-        return;
-      }
-      const body = pelangganResponseSchema.parse(await res.json());
+      const body = await apiJson(
+        `/api/admin/pelanggan/${sunting.id}`,
+        pelangganResponseSchema,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(parsed.data),
+        },
+      );
       perbaruiBaris(body.data);
       setSunting(null);
       setPesan("Data Pelanggan tersimpan.");
-    } catch {
-      setPesan("Tidak bisa menghubungi server. Coba lagi.");
+    } catch (error) {
+      setPesan(
+        pesanDariError(error, "Tidak bisa menghubungi server. Coba lagi."),
+      );
     } finally {
       setMenyimpan(false);
     }
@@ -120,27 +103,25 @@ export function AdminPelangganPage() {
     setPesan(null);
     setMemprosesId(pelanggan.id);
     try {
-      const res = await fetch(
+      const body = await apiJson(
         `/api/admin/pelanggan/${pelanggan.id}/aktif`,
+        pelangganResponseSchema,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ aktif }),
         },
       );
-      if (!res.ok) {
-        setPesan(await pesanKesalahan(res));
-        return;
-      }
-      const data = pelangganResponseSchema.parse(await res.json()).data;
-      perbaruiBaris(data);
+      perbaruiBaris(body.data);
       setPesan(
         aktif
           ? "Pelanggan diaktifkan kembali."
           : "Pelanggan dinonaktifkan dan sesinya langsung berhenti berlaku.",
       );
-    } catch {
-      setPesan("Tidak bisa menghubungi server. Coba lagi.");
+    } catch (error) {
+      setPesan(
+        pesanDariError(error, "Tidak bisa menghubungi server. Coba lagi."),
+      );
     } finally {
       setMemprosesId(null);
     }

@@ -6,7 +6,12 @@ import {
   type Genre,
   type LaguAdmin,
 } from "@musicpedia/shared";
-import { pesanKesalahan } from "../api.ts";
+import {
+  apiFetch,
+  apiJson,
+  KesalahanApi,
+  pesanDariError,
+} from "../api.ts";
 import { NavigasiAdmin } from "./NavigasiAdmin.tsx";
 
 type Status = "memuat" | "siap" | "tidak-ada" | "gagal";
@@ -30,29 +35,33 @@ export function AdminLaguFormPage() {
 
     async function muat() {
       try {
-        const [resGenre, resLagu] = await Promise.all([
-          fetch("/api/genre", { signal: controller.signal }),
+        const [bodyGenre, bodyLagu] = await Promise.all([
+          apiJson("/api/genre", daftarGenreResponseSchema, {
+            signal: controller.signal,
+          }),
           modeUbah
-            ? fetch(`/api/admin/lagu/${id ?? ""}`, {
+            ? apiJson(`/api/admin/lagu/${id ?? ""}`, laguAdminResponseSchema, {
                 signal: controller.signal,
               })
             : Promise.resolve(null),
         ]);
 
-        if (!resGenre.ok) throw new Error(`HTTP ${resGenre.status}`);
-        if (resLagu && resLagu.status === 404) {
+        setGenre(bodyGenre.data);
+        if (bodyLagu) {
+          setLagu(bodyLagu.data);
+        }
+        setStatus("siap");
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        if (
+          modeUbah &&
+          error instanceof KesalahanApi &&
+          error.status === 404
+        ) {
           setStatus("tidak-ada");
           return;
         }
-        if (resLagu && !resLagu.ok) throw new Error(`HTTP ${resLagu.status}`);
-
-        setGenre(daftarGenreResponseSchema.parse(await resGenre.json()).data);
-        if (resLagu) {
-          setLagu(laguAdminResponseSchema.parse(await resLagu.json()).data);
-        }
-        setStatus("siap");
-      } catch {
-        if (!controller.signal.aborted) setStatus("gagal");
+        setStatus("gagal");
       }
     }
 
@@ -73,17 +82,15 @@ export function AdminLaguFormPage() {
 
     setMengirim(true);
     try {
-      const res = await fetch(
+      await apiFetch(
         modeUbah ? `/api/admin/lagu/${id ?? ""}` : "/api/admin/lagu",
         { method: modeUbah ? "PATCH" : "POST", body: data },
       );
-      if (!res.ok) {
-        setPesan(await pesanKesalahan(res));
-        return;
-      }
       navigate("/admin/lagu");
-    } catch {
-      setPesan("Tidak bisa menghubungi server. Coba lagi.");
+    } catch (error) {
+      setPesan(
+        pesanDariError(error, "Tidak bisa menghubungi server. Coba lagi."),
+      );
     } finally {
       setMengirim(false);
     }
