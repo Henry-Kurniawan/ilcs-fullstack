@@ -1,0 +1,24 @@
+{
+  "name": "@musicpedia/backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --env-file-if-exists=../.env --watch src/server.ts",
+    "start": "node --env-file-if-exists=../.env src/server.ts",
+    "migrate": "node --env-file-if-exists=../.env src/migrate.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@musicpedia/shared": "*",
+    "express": "^5.1.0",
+    "node-pg-migrate": "^8.0.0",
+    "pg": "^8.16.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.15.0",
+    "@types/supertest": "^6.0.0",
+    "supertest": "^7.1.0"
+  }
+}
