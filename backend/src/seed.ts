@@ -447,10 +447,9 @@ export async function seedPembelian(
         pembelian.status === "GAGAL"
           ? new Date(now.getTime() - (3 + indeks) * 24 * 60 * 60 * 1000)
           : waktuDemo(now, (indeks + 1) * 60);
-      const kedaluwarsaPada =
-        pembelian.status === "MENUNGGU_PEMBAYARAN"
-          ? new Date(now.getTime() + 24 * 60 * 60 * 1000)
-          : new Date(dibuatPada.getTime() + 24 * 60 * 60 * 1000);
+      const kedaluwarsaPada = new Date(
+        dibuatPada.getTime() + 24 * 60 * 60 * 1000,
+      );
       const dibayarPada =
         pembelian.status === "LUNAS"
           ? new Date(dibuatPada.getTime() + 5 * 60 * 1000)
