@@ -3,6 +3,7 @@ import type { ErrorRequestHandler } from "express";
 import type { ErrorResponse, HealthResponse } from "@musicpedia/shared";
 import type { Config } from "./config.ts";
 import { createAuthController } from "./controllers/auth-controller.ts";
+import { createProfilController } from "./controllers/profil-controller.ts";
 import type { Pool } from "./db.ts";
 import { AppError } from "./errors.ts";
 import { katalogRouter } from "./katalog/controller.ts";
@@ -10,8 +11,10 @@ import { createAuthMiddleware } from "./middleware/auth.ts";
 import { createAkunRepository } from "./repositories/akun-repository.ts";
 import { createAdminRouter } from "./routes/admin-routes.ts";
 import { createAuthRouter } from "./routes/auth-routes.ts";
+import { createProfilRouter } from "./routes/profil-routes.ts";
 import { createSessionMiddleware } from "./session.ts";
 import { createAuthService } from "./services/auth-service.ts";
+import { createProfilService } from "./services/profil-service.ts";
 
 export interface AppDeps {
   pool: Pool;
@@ -41,7 +44,9 @@ export function createApp({ pool, config }: AppDeps) {
 
   const akunRepo = createAkunRepository(pool);
   const authService = createAuthService(akunRepo);
+  const profilService = createProfilService(akunRepo);
   const authController = createAuthController({ authService });
+  const profilController = createProfilController({ profilService });
   const authMiddleware = createAuthMiddleware(akunRepo);
 
   app.use(createSessionMiddleware(pool, config));
@@ -55,6 +60,7 @@ export function createApp({ pool, config }: AppDeps) {
 
   app.use("/api", katalogRouter(pool));
   app.use("/api/auth", createAuthRouter(authController));
+  app.use("/api/profil", createProfilRouter(profilController, authMiddleware));
   app.use("/api/admin", createAdminRouter(authMiddleware));
 
   app.use(handleError);

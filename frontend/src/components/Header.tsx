@@ -20,6 +20,12 @@ export function Header() {
         <nav className="flex items-center gap-4 text-sm">
           {memuat ? null : akun ? (
             <>
+              <Link
+                to="/profil"
+                className="font-medium text-slate-700 hover:underline"
+              >
+                Profil
+              </Link>
               <span className="text-slate-600">{akun.email}</span>
               <button
                 type="button"
