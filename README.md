@@ -228,7 +228,7 @@ Backup/restore diuji pada 12 November 2026 terhadap stack produksi lokal dan ter
 Stack produksi (volume Docker):
 ```sh
 ./scripts/backup.sh
-# backup-20261112T130317Z: database.sql 18.548 byte, audio.tar.gz 4,4 MB, 20 berkas mp3
+# backup-20261112T130317Z: database.sql 18.548 byte, audio.tar.gz 4,4 MB, 20 berkas audio (mp3 + Trial)
 docker compose ... exec -T db psql ... -c "UPDATE lagu SET judul='RUSAK' ..." \
   -c "DELETE FROM item_pembelian ..."
 docker compose ... exec -T backend rm -f /data/audio/mp3/seed-cahaya-pagi.mp3
@@ -241,7 +241,7 @@ Database/audio pengembangan (mode host):
 COMPOSE_FILE=docker-compose.yml ENV_FILE= \
   POSTGRES_DB=musicpedia_backup_test AUDIO_HOST_DIR=/tmp/opencode/mp-audio-backup-test \
   BACKUP_DIR=/tmp/opencode/mp-backups-dev ./scripts/backup.sh
-# backup-20261112T130506Z: 20 berkas mp3
+# backup-20261112T130506Z: 20 berkas audio (mp3 + Trial)
 
 # rusakkan data: ubah judul, hapus 2 Item Pembelian, hapus satu mp3
 COMPOSE_FILE=docker-compose.yml ENV_FILE= \
