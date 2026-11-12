@@ -71,7 +71,14 @@ export function App() {
                 </PerluAdmin>
               }
             />
-            <Route path="admin/pelanggan" element={<AdminPelangganPage />} />
+            <Route
+              path="admin/pelanggan"
+              element={
+                <PerluAdmin>
+                  <AdminPelangganPage />
+                </PerluAdmin>
+              }
+            />
           </Route>
         </Routes>
       </KeranjangProvider>

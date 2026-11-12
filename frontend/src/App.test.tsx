@@ -334,7 +334,7 @@ it("menampilkan area Admin Pelanggan bagi Admin", async () => {
   expect(screen.getByRole("button", { name: "Nonaktifkan" })).toBeTruthy();
 });
 
-it("mengalihkan Pelanggan yang membuka area Admin", async () => {
+it("menutup area Admin Pelanggan bagi Pelanggan", async () => {
   stubFetch({
     id: 2,
     email: "siti@example.com",
@@ -345,7 +345,7 @@ it("mengalihkan Pelanggan yang membuka area Admin", async () => {
   renderRute("/admin/pelanggan");
 
   expect(
-    await screen.findByRole("heading", { name: "Katalog Lagu" }),
+    await screen.findByRole("heading", { name: "Halaman ini khusus Admin" }),
   ).toBeTruthy();
 });
 

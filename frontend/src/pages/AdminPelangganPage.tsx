@@ -1,5 +1,4 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Navigate } from "react-router";
 import {
   daftarPelangganResponseSchema,
   pelangganResponseSchema,
@@ -8,14 +7,12 @@ import {
   type Pelanggan,
 } from "@musicpedia/shared";
 import { apiJson, pesanDariError } from "../api.ts";
-import { useAuth } from "../auth/AuthContext.tsx";
 
 type Status = "memuat" | "siap" | "gagal";
 
 const kelasInput = "mt-1 w-full rounded-md border border-slate-300 px-3 py-2";
 
 export function AdminPelangganPage() {
-  const { akun, memuat } = useAuth();
   const [cariInput, setCariInput] = useState("");
   const [cari, setCari] = useState("");
   const [halaman, setHalaman] = useState(1);
@@ -27,8 +24,6 @@ export function AdminPelangganPage() {
   const [memprosesId, setMemprosesId] = useState<number | null>(null);
 
   useEffect(() => {
-    if (akun?.peran !== "ADMIN") return;
-
     const controller = new AbortController();
     const params = new URLSearchParams({ halaman: String(halaman) });
     if (cari) params.set("cari", cari);
@@ -48,18 +43,7 @@ export function AdminPelangganPage() {
       });
 
     return () => controller.abort();
-  }, [akun?.peran, cari, halaman]);
-
-  if (memuat) {
-    return (
-      <main className="mx-auto max-w-5xl px-6 py-12">
-        <p className="text-slate-600">Memuat…</p>
-      </main>
-    );
-  }
-
-  if (!akun) return <Navigate to="/masuk" replace />;
-  if (akun.peran !== "ADMIN") return <Navigate to="/" replace />;
+  }, [cari, halaman]);
 
   function kirimCari(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
