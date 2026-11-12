@@ -25,6 +25,43 @@ const lagu = {
 
 const laguAdmin = { ...lagu, tersembunyi: true };
 
+const pembelianUji = [
+  {
+    id: 21,
+    kodeOrder: "MP-21",
+    status: "MENUNGGU_PEMBAYARAN",
+    total: lagu.harga,
+    dibuatPada: "2026-11-11T02:00:00.000Z",
+    dibayarPada: null,
+    kedaluwarsaPada: "2026-11-12T02:00:00.000Z",
+    itemPembelian: [
+      {
+        laguId: lagu.id,
+        judul: lagu.judul,
+        artis: lagu.artis,
+        harga: lagu.harga,
+      },
+    ],
+  },
+  {
+    id: 22,
+    kodeOrder: "MP-22",
+    status: "LUNAS",
+    total: lagu.harga,
+    dibuatPada: "2026-11-01T02:00:00.000Z",
+    dibayarPada: "2026-11-01T02:05:00.000Z",
+    kedaluwarsaPada: "2026-11-02T02:00:00.000Z",
+    itemPembelian: [
+      {
+        laguId: lagu.id,
+        judul: lagu.judul,
+        artis: lagu.artis,
+        harga: lagu.harga,
+      },
+    ],
+  },
+];
+
 const pelanggan = {
   id: 9,
   email: "siti@example.com",
@@ -48,7 +85,15 @@ function stubFetch(akun: AkunUji | null = null) {
             ? {
                 data: { items: [lagu], total: lagu.harga, jumlah: 1 },
               }
-            : url.startsWith("/api/genre")
+            : url.startsWith("/api/pembelian")
+              ? { data: pembelianUji }
+              : url.startsWith("/api/konfigurasi")
+                ? {
+                    midtransClientKey: "client-publik",
+                    midtransSnapUrl:
+                      "https://app.sandbox.midtrans.com/snap/snap.js",
+                  }
+                : url.startsWith("/api/genre")
             ? { data: [lagu.genre] }
             : url.startsWith("/api/admin/pelanggan")
               ? {
@@ -195,7 +240,30 @@ it("menampilkan halaman Keranjang Pelanggan", async () => {
   expect(await screen.findByText("Cahaya Pagi")).toBeTruthy();
   expect(screen.getByText("Rina Prasetya")).toBeTruthy();
   expect(screen.getByRole("button", { name: "Hapus" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Checkout dan bayar" })).toBeTruthy();
   expect(screen.getByText(/^Total/).textContent).toContain("25.000");
+});
+
+it("menampilkan riwayat Pembelian dengan status dan aksi melanjutkan", async () => {
+  stubFetch({
+    id: 1,
+    email: "siti@example.com",
+    nama: "Siti Rahma",
+    peran: "PELANGGAN",
+    aktif: true,
+  });
+  renderRute("/pembelian");
+
+  expect(
+    await screen.findByRole("heading", { name: "Riwayat Pembelian" }),
+  ).toBeTruthy();
+  expect(await screen.findByText("Menunggu Pembayaran")).toBeTruthy();
+  expect(screen.getByText("Lunas")).toBeTruthy();
+  expect(
+    screen.getByRole("button", { name: "Lanjutkan pembayaran" }),
+  ).toBeTruthy();
+  expect(screen.getAllByText(/^Total/)).toHaveLength(2);
+  expect(screen.getAllByText(/^Total/)[0]!.textContent).toContain("25.000");
 });
 
 it("mengarahkan Pengunjung ke login saat menambah Lagu ke Keranjang", async () => {
@@ -210,8 +278,7 @@ it("mengarahkan Pengunjung ke login saat menambah Lagu ke Keranjang", async () =
   expect(await screen.findByRole("heading", { name: "Masuk" })).toBeTruthy();
 });
 
-it("menampilkan halaman profil Pelanggan", async () => {
-  stubFetch({
+it("menampilkan halaman profil Pelanggan", async () => {  stubFetch({
     id: 1,
     email: "siti@example.com",
     nama: "Siti Rahma",

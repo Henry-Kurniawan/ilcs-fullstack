@@ -4,10 +4,15 @@ import path from "node:path";
 import pg from "pg";
 import { createApp } from "../src/app.ts";
 import { loadConfig } from "../src/config.ts";
+import type { PaymentGateway } from "../src/payment-gateway/client.ts";
 import { cariBiner } from "./audio-helper.ts";
 import { testDatabaseUrl } from "./global-setup.ts";
 
-export function createTestContext() {
+export interface DependensiTes {
+  paymentGateway?: PaymentGateway;
+}
+
+export function createTestContext({ paymentGateway }: DependensiTes = {}) {
   const databaseUrl = testDatabaseUrl();
   const pool = new pg.Pool({ connectionString: databaseUrl });
   const audioDir = mkdtempSync(path.join(tmpdir(), "musicpedia-audio-"));
@@ -23,7 +28,7 @@ export function createTestContext() {
     databaseUrl,
     secureCookies: false,
   };
-  const app = createApp({ pool, config });
+  const app = createApp({ pool, config, paymentGateway });
 
   return {
     pool,

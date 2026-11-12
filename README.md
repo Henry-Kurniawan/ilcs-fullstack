@@ -43,6 +43,13 @@ Buka http://localhost:5173. Halaman awal menampilkan katalog Lagu dari `/api/lag
 - Pelanggan tidak pernah dihapus; API tidak menyediakan endpoint hapus. Menonaktifkan Pelanggan langsung memutus sesi aktifnya pada request berikutnya (ADR 0003), dan mengaktifkannya kembali membuat Pelanggan bisa login lagi.
 - Akun Admin tidak pernah muncul di daftar Pelanggan. Admin juga tidak dapat menonaktifkan akunnya sendiri lewat area ini.
 
+## Pembelian dan Midtrans
+- Pelanggan menekan **Checkout dan bayar** di Keranjang. Keranjang menjadi satu Pembelian berstatus Menunggu Pembayaran dan halaman Snap dibuka dengan token dari server.
+- Checkout berjalan dalam satu transaksi DB: baris Pelanggan dikunci (`SELECT … FOR UPDATE`), aturan Keranjang divalidasi ulang, Pembelian dan Item Pembelian dibuat dengan harga saat checkout, Keranjang dikosongkan, lalu token Snap diminta dengan masa berlaku 24 jam. Bila gateway gagal, semuanya di-rollback.
+- Riwayat Pembelian ada di `/pembelian`. Pembelian Menunggu Pembayaran bisa dilanjutkan dengan token Snap yang tersimpan, tanpa membuat transaksi baru.
+- `MIDTRANS_SERVER_KEY` hanya ada di server. Frontend memuat `MIDTRANS_CLIENT_KEY` dan URL snap.js lewat `GET /api/konfigurasi`.
+- `MIDTRANS_PRODUCTION=true` memakai endpoint Midtrans produksi; nilai lain memakai sandbox. Webhook dan penyapu Gagal dikerjakan di ticket terpisah.
+
 ## Perintah
 | Perintah | Fungsi |
 | --- | --- |

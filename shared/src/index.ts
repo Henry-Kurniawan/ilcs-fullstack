@@ -310,3 +310,62 @@ export const tambahKeranjangRequestSchema = z.strictObject({
 export type TambahKeranjangRequest = z.infer<
   typeof tambahKeranjangRequestSchema
 >;
+
+export const statusPembelianSchema = z.enum([
+  "MENUNGGU_PEMBAYARAN",
+  "LUNAS",
+  "GAGAL",
+]);
+
+export type StatusPembelian = z.infer<typeof statusPembelianSchema>;
+
+export const itemPembelianSchema = z.object({
+  laguId: z.number().int().positive(),
+  judul: z.string().min(1),
+  artis: z.string().min(1),
+  harga: z.number().int().nonnegative(),
+});
+
+export type ItemPembelian = z.infer<typeof itemPembelianSchema>;
+
+export const pembelianSchema = z.object({
+  id: z.number().int().positive(),
+  kodeOrder: z.string().min(1),
+  status: statusPembelianSchema,
+  total: z.number().int().nonnegative(),
+  dibuatPada: z.string(),
+  dibayarPada: z.string().nullable(),
+  kedaluwarsaPada: z.string(),
+  itemPembelian: z.array(itemPembelianSchema),
+});
+
+export type Pembelian = z.infer<typeof pembelianSchema>;
+
+export const pembelianCheckoutSchema = pembelianSchema.extend({
+  tokenSnap: z.string().min(1),
+});
+
+export type PembelianCheckout = z.infer<typeof pembelianCheckoutSchema>;
+
+export const daftarPembelianResponseSchema = z.object({
+  data: z.array(pembelianSchema),
+});
+
+export type DaftarPembelianResponse = z.infer<
+  typeof daftarPembelianResponseSchema
+>;
+
+export const pembelianCheckoutResponseSchema = z.object({
+  data: pembelianCheckoutSchema,
+});
+
+export type PembelianCheckoutResponse = z.infer<
+  typeof pembelianCheckoutResponseSchema
+>;
+
+export const konfigurasiResponseSchema = z.object({
+  midtransClientKey: z.string(),
+  midtransSnapUrl: z.string().url(),
+});
+
+export type KonfigurasiResponse = z.infer<typeof konfigurasiResponseSchema>;

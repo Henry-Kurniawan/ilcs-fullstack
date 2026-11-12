@@ -1,6 +1,10 @@
 import express from "express";
 import type { ErrorRequestHandler } from "express";
-import type { ErrorResponse, HealthResponse } from "@musicpedia/shared";
+import type {
+  ErrorResponse,
+  HealthResponse,
+  KonfigurasiResponse,
+} from "@musicpedia/shared";
 import type { Config } from "./config.ts";
 import { createAuthController } from "./controllers/auth-controller.ts";
 import { createProfilController } from "./controllers/profil-controller.ts";
@@ -15,6 +19,16 @@ import { createKeranjangRepository } from "./keranjang/repository.ts";
 import { createKeranjangService } from "./keranjang/service.ts";
 import { siapkanDirektoriAudio } from "./media/audio.ts";
 import { createAuthMiddleware } from "./middleware/auth.ts";
+import {
+  createMidtransGateway,
+  snapUrl,
+  type PaymentGateway,
+} from "./payment-gateway/client.ts";
+import {
+  createPembelianController,
+  pembelianRouter,
+} from "./pembelian/controller.ts";
+import { createPembelianService } from "./pembelian/service.ts";
 import { createPelangganController } from "./pelanggan/controller.ts";
 import { createPelangganRepository } from "./pelanggan/repository.ts";
 import { createPelangganService } from "./pelanggan/service.ts";
@@ -29,6 +43,7 @@ import { createProfilService } from "./services/profil-service.ts";
 export interface AppDeps {
   pool: Pool;
   config: Config;
+  paymentGateway?: PaymentGateway;
 }
 
 const handleError: ErrorRequestHandler = (error, _req, res, _next) => {
@@ -45,7 +60,7 @@ const handleError: ErrorRequestHandler = (error, _req, res, _next) => {
   res.status(500).json(body);
 };
 
-export function createApp({ pool, config }: AppDeps) {
+export function createApp({ pool, config, paymentGateway }: AppDeps) {
   const app = express();
   siapkanDirektoriAudio(config.audioDir);
   if (config.secureCookies) {
@@ -69,6 +84,15 @@ export function createApp({ pool, config }: AppDeps) {
   const keranjangController = createKeranjangController({
     service: keranjangService,
   });
+  const gateway =
+    paymentGateway ??
+    createMidtransGateway({
+      serverKey: config.midtransServerKey,
+      isProduction: config.midtransProduction,
+    });
+  const pembelianController = createPembelianController({
+    service: createPembelianService(pool, gateway),
+  });
 
   app.use(createSessionMiddleware(pool, config));
   app.use(authMiddleware.muatAkunAktif);
@@ -79,8 +103,19 @@ export function createApp({ pool, config }: AppDeps) {
     res.json(body);
   });
 
+  app.get("/api/konfigurasi", (_req, res) => {
+    // Hanya kunci publik yang boleh sampai ke browser. Server key Midtrans
+    // tidak pernah dikirim ke klien.
+    const body: KonfigurasiResponse = {
+      midtransClientKey: config.midtransClientKey,
+      midtransSnapUrl: snapUrl(config.midtransProduction),
+    };
+    res.json(body);
+  });
+
   app.use("/api", katalogRouter(pool, { audioDir: config.audioDir }));
   app.use("/api", keranjangRouter(keranjangController, authMiddleware));
+  app.use("/api", pembelianRouter(pembelianController, authMiddleware));
   app.use("/api/auth", createAuthRouter(authController));
   app.use("/api/profil", createProfilRouter(profilController, authMiddleware));
   app.use(

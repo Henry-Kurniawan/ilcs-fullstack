@@ -1,5 +1,5 @@
 import request from "supertest";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { errorResponseSchema, keranjangResponseSchema } from "@musicpedia/shared";
 import type { Agent } from "supertest";
 import { createTestContext } from "./support.ts";
@@ -64,47 +64,8 @@ async function buatPelanggan(email = kredensial.email): Promise<void> {
     .expect(201);
 }
 
-// Ticket #9 membuat tabel pembelian dan item_pembelian lewat migrasi. Sampai
-// itu ada, tes ini menyiapkan bentuk minimalnya sendiri agar aturan Keranjang
-// bisa diuji sekarang. Tabel hanya dibuat bila belum ada, lalu dihapus lagi
-// bila tes ini yang membuatnya.
-let tabelPembelianDibuat = false;
-
-async function siapkanTabelPembelian(): Promise<void> {
-  const { rows } = await pool.query<{ ada: boolean }>(
-    `SELECT to_regclass('public.pembelian') IS NOT NULL
-        AND to_regclass('public.item_pembelian') IS NOT NULL AS ada`,
-  );
-  if (rows[0]?.ada) return;
-
-  tabelPembelianDibuat = true;
-  await pool.query(`
-    CREATE TABLE pembelian (
-      id serial PRIMARY KEY,
-      pelanggan_id integer NOT NULL REFERENCES akun (id) ON DELETE CASCADE,
-      status text NOT NULL
-        CHECK (status IN ('MENUNGGU_PEMBAYARAN', 'LUNAS', 'GAGAL')),
-      total integer NOT NULL DEFAULT 0,
-      dibuat_pada timestamptz NOT NULL DEFAULT now()
-    );
-
-    CREATE TABLE item_pembelian (
-      pembelian_id integer NOT NULL REFERENCES pembelian (id) ON DELETE CASCADE,
-      lagu_id integer NOT NULL REFERENCES lagu (id) ON DELETE CASCADE,
-      harga integer NOT NULL DEFAULT 0,
-      PRIMARY KEY (pembelian_id, lagu_id)
-    );
-  `);
-}
-
-async function hapusTabelPembelian(): Promise<void> {
-  if (!tabelPembelianDibuat) return;
-  await pool.query(`
-    DROP TABLE IF EXISTS item_pembelian;
-    DROP TABLE IF EXISTS pembelian;
-  `);
-}
-
+// Tabel pembelian dan item_pembelian berasal dari migrasi; helper ini mencatat
+// Pembelian langsung agar aturan Keranjang bisa diuji tanpa alur checkout.
 async function catatPembelian(
   email: string,
   laguId: number,
@@ -317,9 +278,6 @@ describe("Keranjang lintas sesi dan perangkat", () => {
 });
 
 describe("Aturan kepemilikan Lagu di Keranjang", () => {
-  beforeAll(siapkanTabelPembelian);
-  afterAll(hapusTabelPembelian);
-
   it("menolak Lagu yang sudah dimiliki lewat Pembelian Lunas", async () => {
     await buatPelanggan();
     const pop = await buatGenre("Pop");

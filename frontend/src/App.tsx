@@ -11,6 +11,7 @@ import { AdminPelangganPage } from "./pages/AdminPelangganPage.tsx";
 import { KeranjangProvider } from "./keranjang/KeranjangContext.tsx";
 import { KeranjangPage } from "./pages/KeranjangPage.tsx";
 import { LoginPage } from "./pages/LoginPage.tsx";
+import { PembelianPage } from "./pages/PembelianPage.tsx";
 import { ProfilePage } from "./pages/ProfilePage.tsx";
 import { RegisterPage } from "./pages/RegisterPage.tsx";
 
@@ -23,6 +24,7 @@ export function App() {
             <Route index element={<KatalogPage />} />
             <Route path="lagu/:id" element={<LaguDetailPage />} />
             <Route path="keranjang" element={<KeranjangPage />} />
+            <Route path="pembelian" element={<PembelianPage />} />
             <Route path="registrasi" element={<RegisterPage />} />
             <Route path="masuk" element={<LoginPage />} />
             <Route path="profil" element={<ProfilePage />} />
