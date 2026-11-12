@@ -115,3 +115,180 @@ describe("GET /api/admin/pelanggan", () => {
     expect(res.body.code).toBe("AKSES_DITOLAK");
   });
 });
+
+async function cariIdPelanggan(
+  agent: request.Agent,
+  email: string,
+): Promise<number> {
+  const res = await agent
+    .get("/api/admin/pelanggan")
+    .query({ cari: email })
+    .expect(200);
+  return daftarPelangganResponseSchema.parse(res.body).data[0]!.id;
+}
+
+describe("PATCH /api/admin/pelanggan/:id", () => {
+  it("mengubah nama dan email Pelanggan", async () => {
+    const agentSiti = await daftarSebagaiPelanggan(siti);
+    const agentAdmin = await masukAdmin();
+    const id = await cariIdPelanggan(agentAdmin, siti.email);
+
+    const res = await agentAdmin
+      .patch(`/api/admin/pelanggan/${id}`)
+      .send({ nama: "Siti Rahma", email: "siti.rahma@example.com" })
+      .expect(200);
+
+    expect(res.body.data).toEqual({
+      id,
+      email: "siti.rahma@example.com",
+      nama: "Siti Rahma",
+      aktif: true,
+    });
+
+    const profil = await agentSiti.get("/api/profil").expect(200);
+    expect(profil.body.profil).toEqual({
+      id,
+      email: "siti.rahma@example.com",
+      nama: "Siti Rahma",
+    });
+  });
+
+  it("mencari Pelanggan berdasarkan nama tanpa peka huruf besar-kecil", async () => {
+    await daftarSebagaiPelanggan(siti);
+    await daftarSebagaiPelanggan(budi);
+    const agentAdmin = await masukAdmin();
+    const id = await cariIdPelanggan(agentAdmin, budi.email);
+    await agentAdmin
+      .patch(`/api/admin/pelanggan/${id}`)
+      .send({ nama: "Budi Santoso" })
+      .expect(200);
+
+    const res = await agentAdmin
+      .get("/api/admin/pelanggan")
+      .query({ cari: "BUDI SAN" })
+      .expect(200);
+
+    expect(
+      daftarPelangganResponseSchema.parse(res.body).data.map(
+        (pelanggan) => pelanggan.nama,
+      ),
+    ).toEqual(["Budi Santoso"]);
+  });
+
+  it("menolak email yang sudah dipakai Pelanggan lain", async () => {
+    await daftarSebagaiPelanggan(siti);
+    await daftarSebagaiPelanggan(budi);
+    const agentAdmin = await masukAdmin();
+    const idBudi = await cariIdPelanggan(agentAdmin, budi.email);
+
+    const res = await agentAdmin
+      .patch(`/api/admin/pelanggan/${idBudi}`)
+      .send({ email: siti.email })
+      .expect(409);
+
+    expect(res.body).toEqual({
+      error: "Email sudah terdaftar. Gunakan email lain.",
+      code: "EMAIL_TERDAFTAR",
+    });
+  });
+
+  it("menolak email milik akun Admin", async () => {
+    await daftarSebagaiPelanggan(siti);
+    const agentAdmin = await masukAdmin();
+    const id = await cariIdPelanggan(agentAdmin, siti.email);
+
+    const res = await agentAdmin
+      .patch(`/api/admin/pelanggan/${id}`)
+      .send({ email: admin.email })
+      .expect(409);
+
+    expect(res.body.code).toBe("EMAIL_TERDAFTAR");
+  });
+
+  it("tidak pernah mengubah password Pelanggan", async () => {
+    await daftarSebagaiPelanggan(siti);
+    const agentAdmin = await masukAdmin();
+    const id = await cariIdPelanggan(agentAdmin, siti.email);
+
+    const res = await agentAdmin
+      .patch(`/api/admin/pelanggan/${id}`)
+      .send({ nama: "Siti Rahma", password: "kata-sandi-baru" })
+      .expect(400);
+
+    expect(res.body.code).toBe("VALIDASI");
+
+    await request(app).post("/api/auth/login").send(siti).expect(200);
+    await request(app)
+      .post("/api/auth/login")
+      .send({ ...siti, password: "kata-sandi-baru" })
+      .expect(401);
+  });
+
+  it("menolak data yang tidak valid dengan pesan berbahasa Indonesia", async () => {
+    await daftarSebagaiPelanggan(siti);
+    const agentAdmin = await masukAdmin();
+    const id = await cariIdPelanggan(agentAdmin, siti.email);
+
+    const namaKosong = await agentAdmin
+      .patch(`/api/admin/pelanggan/${id}`)
+      .send({ nama: "   " })
+      .expect(400);
+    expect(namaKosong.body).toEqual({
+      error: "Nama wajib diisi.",
+      code: "VALIDASI",
+    });
+
+    const emailSalah = await agentAdmin
+      .patch(`/api/admin/pelanggan/${id}`)
+      .send({ email: "bukan-email" })
+      .expect(400);
+    expect(emailSalah.body).toEqual({
+      error: "Email tidak valid.",
+      code: "VALIDASI",
+    });
+
+    const kosong = await agentAdmin
+      .patch(`/api/admin/pelanggan/${id}`)
+      .send({})
+      .expect(400);
+    expect(kosong.body).toEqual({
+      error: "Isi minimal nama atau email Pelanggan.",
+      code: "VALIDASI",
+    });
+  });
+
+  it("menjawab 404 untuk akun Admin dan Pelanggan yang tidak ada", async () => {
+    const agentAdmin = await masukAdmin();
+    const me = await agentAdmin.get("/api/auth/me").expect(200);
+
+    const akunAdmin = await agentAdmin
+      .patch(`/api/admin/pelanggan/${me.body.akun.id}`)
+      .send({ nama: "Admin Lain" })
+      .expect(404);
+    expect(akunAdmin.body.code).toBe("PELANGGAN_TIDAK_DITEMUKAN");
+
+    const tidakAda = await agentAdmin
+      .patch("/api/admin/pelanggan/999999")
+      .send({ nama: "Tidak Ada" })
+      .expect(404);
+    expect(tidakAda.body.code).toBe("PELANGGAN_TIDAK_DITEMUKAN");
+  });
+
+  it("menolak Pengunjung dan Pelanggan", async () => {
+    const agentSiti = await daftarSebagaiPelanggan(siti);
+    const me = await agentSiti.get("/api/profil").expect(200);
+
+    const pengunjung = await request(app)
+      .patch(`/api/admin/pelanggan/${me.body.profil.id}`)
+      .send({ nama: "Siti Rahma" })
+      .expect(401);
+    expect(pengunjung.body.code).toBe("BELUM_MASUK");
+
+    const pelanggan = await agentSiti
+      .patch(`/api/admin/pelanggan/${me.body.profil.id}`)
+      .send({ nama: "Siti Rahma" })
+      .expect(403);
+    expect(pelanggan.body.code).toBe("AKSES_DITOLAK");
+  });
+});
+
