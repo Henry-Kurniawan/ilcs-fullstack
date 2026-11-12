@@ -254,22 +254,44 @@ COMPOSE_FILE=docker-compose.yml ENV_FILE= \
 Hasil: judul `Cahaya Pagi` pulih, `item_pembelian` kembali 10, jumlah mp3 kembali 10, dan berkas `seed-cahaya-pagi.mp3` ada kembali.
 
 ## Alur Demo End-to-End
-Prasyarat: stack produksi lokal berjalan dan Data Demo sudah di-seed. Untuk pembayaran sandbox, isi `MIDTRANS_SERVER_KEY` dan `MIDTRANS_CLIENT_KEY` sandbox dengan `MIDTRANS_PRODUCTION=false`.
+Demo punya dua lapis: alur yang **sudah diverifikasi lokal tanpa kredensial Midtrans**, dan pembayaran sandbox yang **memerlukan kunci sandbox milik operator**. Jalur gateway tidak di-fake; tanpa kunci, checkout berhenti dengan pesan yang jelas.
 
-1. **Registrasi.** Buka `https://localhost:18443` (atau domain), pilih Registrasi, buat Pelanggan baru. Sesi langsung aktif.
-2. **Jelajah dan Trial.** Cari Lagu berdasarkan judul/Artis, filter Genre, urutkan Terbaru atau Terlaris, buka detail, dan putar Trial 30 detik.
-3. **Keranjang.** Tambahkan dua Lagu berbeda. Keranjang tersimpan di server, bukan di browser, dan menolak Lagu yang sudah dimiliki atau sedang Menunggu Pembayaran.
-4. **Checkout.** Buka Keranjang dan tekan **Checkout dan bayar**. Backend membuat satu Pembelian Menunggu Pembayaran, mengosongkan Keranjang, dan membuka Snap dengan token 24 jam.
-5. **Bayar di sandbox.** Pilih metode pembayaran sandbox Midtrans (misalnya kartu uji `4811 1111 1111 1114` atau simulator QRIS/GoPay), selesaikan pembayaran.
-6. **Webhook.** Untuk stack lokal di balik self-signed, jalankan tunnel ke nginx:
+### Menyiapkan stack demo
+```sh
+cp .env.production.example .env.production
+# Isi minimal: SESSION_SECRET, POSTGRES_PASSWORD, ADMIN_PASSWORD.
+# Di produksi isi juga BACKUP_RCLONE_REMOTE atau BACKUP_OFFSITE_DIR untuk backup.
+npm run certs
+npm run prod:up
+npm run prod:seed
+```
+Untuk pembayaran sandbox, isi juga di `.env.production` lalu jalankan ulang backend:
+```sh
+MIDTRANS_SERVER_KEY=<server key sandbox>
+MIDTRANS_CLIENT_KEY=<client key sandbox>
+MIDTRANS_PRODUCTION=false
+```
+```sh
+npm run prod:up
+```
+`npm run prod:seed` bersifat idempoten: menjalankannya lagi memulihkan Data Demo ke tiga status (Menunggu Pembayaran dengan masa berlaku baru, Lunas, Gagal) tanpa membuat duplikat.
+
+### Langkah demo
+1. **Registrasi.** Buka `https://localhost:18443` (atau domain), pilih Registrasi, buat Pelanggan baru. Sesi langsung aktif. *Terverifikasi lokal via HTTPS.*
+2. **Jelajah dan Trial.** Cari Lagu berdasarkan judul/Artis, filter Genre, urutkan Terbaru atau Terlaris, buka detail, dan putar Trial 30 detik. *Terverifikasi lokal (Trial 29,9 detik, `audio/mpeg`).*
+3. **Keranjang.** Tambahkan dua Lagu berbeda. Keranjang tersimpan di server, bukan di browser, dan menolak Lagu yang sudah dimiliki atau sedang Menunggu Pembayaran. *Terverifikasi lokal.*
+4. **Checkout tanpa kunci.** Buka Keranjang dan tekan **Checkout dan bayar** sebelum kunci Midtrans diisi: API menjawab `502 PAYMENT_GATEWAY_GAGAL` dan Keranjang tetap utuh (tidak ada Pembelian yatim). *Terverifikasi lokal; ini perilaku yang diharapkan.*
+5. **Checkout dengan kunci sandbox.** Dengan `MIDTRANS_SERVER_KEY`/`MIDTRANS_CLIENT_KEY` sandbox terisi, checkout membuat satu Pembelian Menunggu Pembayaran (token Snap 24 jam) dan mengosongkan Keranjang. *Memerlukan kunci sandbox operator.*
+6. **Bayar di sandbox.** Pilih metode pembayaran sandbox Midtrans (misalnya kartu uji `4811 1111 1111 1114` atau simulator QRIS/GoPay), selesaikan pembayaran. *Memerlukan kunci sandbox operator.*
+7. **Webhook.** Untuk stack lokal di balik self-signed, jalankan tunnel ke nginx:
    ```sh
    cloudflared tunnel --url https://localhost:18443 --no-tls-verify
    ```
-   Isi **Settings → Payment Notification URL** di dashboard Midtrans sandbox dengan `https://<url-tunnel>/api/webhook/midtrans`. Untuk dev memakai backend langsung, ikuti bagian webhook di atas. Tanpa URL publik, status tidak akan berubah karena Midtrans tidak bisa menjangkau localhost.
-7. **Lunas.** Webhook memverifikasi signature dan mengecek Status API. Pembelian berubah menjadi Lunas dan `dibayar_pada` tercatat. Buka `/pembelian` untuk melihat status.
-8. **Unduh.** Buka `/lagu-saya`, lalu unduh mp3. Nama berkas berbentuk `Artis - judul.mp3`; unduhan bisa diulang tanpa batas, termasuk untuk Lagu yang kemudian disembunyikan.
-9. **Laporan.** Login Admin, buka `/admin/laporan`, pilih rentang tanggal, lalu lihat baris Pembelian Lunas. Unduh PDF dan Excel dari tombol ekspor.
-10. **Ulangi demo.** Jalankan seed lagi; Data Demo kembali ke kondisi semula tanpa duplikasi. Gunakan akun `budi@musicpedia.id` untuk mendemokan Unduhan dan Laporan tanpa menunggu Midtrans, karena Pembelian Lunas-nya sudah tersedia.
+   Isi **Settings → Payment Notification URL** di dashboard Midtrans sandbox dengan `https://<url-tunnel>/api/webhook/midtrans`. Tanpa URL publik, status tidak akan berubah karena Midtrans tidak bisa menjangkau localhost. *Pemeriksaan signature sudah diverifikasi lokal: `signature_key` palsu ditolak `401 SIGNATURE_TIDAK_VALID`. Notifikasi asli dari Midtrans memerlukan kunci sandbox operator.*
+8. **Lunas.** Webhook memverifikasi signature dan mengecek Status API. Pembelian berubah menjadi Lunas dan `dibayar_pada` tercatat. Buka `/pembelian` untuk melihat status. *Memerlukan kunci sandbox operator untuk transisi asli; status Lunas Data Demo sudah tersedia untuk langkah berikutnya.*
+9. **Unduh.** Buka `/lagu-saya`, lalu unduh mp3. Nama berkas berbentuk `Artis - judul.mp3`; unduhan bisa diulang tanpa batas, termasuk untuk Lagu yang kemudian disembunyikan. *Terverifikasi lokal dengan akun `budi@musicpedia.id` (4 Lagu).*
+10. **Laporan.** Login Admin, buka `/admin/laporan`, pilih rentang tanggal, lalu lihat baris Pembelian Lunas beserta kolom Harga dan Total. Unduh PDF dan Excel dari tombol ekspor. *Terverifikasi lokal: 6 baris, total Rp 155.000, PDF 1 halaman dan Excel berhasil.*
+11. **Ulangi demo.** Jalankan `npm run prod:seed` lagi; Data Demo kembali ke kondisi semula tanpa duplikasi. Gunakan akun `budi@musicpedia.id` untuk mendemokan Unduhan dan Laporan tanpa menunggu Midtrans, karena Pembelian Lunas-nya sudah tersedia. *Terverifikasi lokal.*
 
 ### Hasil verifikasi stack produksi lokal
 Yang sudah diverifikasi pada 12 November 2026:
@@ -283,7 +305,7 @@ Yang sudah diverifikasi pada 12 November 2026:
 - Login Admin, Laporan Penjualan berisi 6 baris total Rp 155.000; ekspor PDF (1 halaman) dan Excel berhasil.
 - Backup dan restore diuji pada stack produksi dan mode pengembangan seperti dicatat di atas.
 
-Yang belum bisa diverifikasi di lingkungan ini: pembayaran Midtrans sandbox dan notifikasi webhook, karena tidak ada `MIDTRANS_SERVER_KEY`/`MIDTRANS_CLIENT_KEY` sandbox. Jalur gateway tidak di-fake dan signature tidak dilemahkan. Isi kredensial sandbox lalu ulangi langkah 5–7 untuk menyelesaikannya.
+Yang belum bisa diverifikasi di lingkungan ini: pembayaran Midtrans sandbox dan notifikasi webhook, karena tidak ada `MIDTRANS_SERVER_KEY`/`MIDTRANS_CLIENT_KEY` sandbox. Jalur gateway tidak di-fake dan signature tidak dilemahkan. Isi kredensial sandbox lalu ulangi langkah 5–8 untuk menyelesaikannya.
 
 ## Perintah
 | Perintah | Fungsi |
