@@ -21,7 +21,8 @@ export interface KeranjangRepository {
   ): Promise<StatusPembelianLagu>;
 }
 
-export function createKeranjangRepository(pool: Pool): KeranjangRepository {  return {
+export function createKeranjangRepository(pool: Pool): KeranjangRepository {
+  return {
     async daftar(pelangganId) {
       // Lagu yang disembunyikan Admin tidak lagi bisa dibeli, jadi tidak
       // ditampilkan sebagai bagian Keranjang.
