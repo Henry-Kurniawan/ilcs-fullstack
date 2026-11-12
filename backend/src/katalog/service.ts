@@ -4,7 +4,7 @@ import type {
   Lagu,
 } from "@musicpedia/shared";
 import type { Pool } from "../db.ts";
-import { daftarGenre, daftarLagu, detailLagu } from "./repository.ts";
+import { daftarGenre, daftarLagu, detailLagu, trialLagu } from "./repository.ts";
 
 export interface PermintaanDaftarLagu {
   cari?: string;
@@ -45,4 +45,12 @@ export async function ambilDetailLagu(
 
 export async function ambilDaftarGenre(pool: Pool): Promise<DaftarGenreResponse> {
   return { data: await daftarGenre(pool) };
+}
+
+export async function ambilTrialLagu(
+  pool: Pool,
+  id: number,
+): Promise<string | null> {
+  const hasil = await trialLagu(pool, id);
+  return hasil?.fileTrial ?? null;
 }

@@ -6,6 +6,7 @@ import { createAuthController } from "./controllers/auth-controller.ts";
 import type { Pool } from "./db.ts";
 import { AppError } from "./errors.ts";
 import { katalogRouter } from "./katalog/controller.ts";
+import { siapkanDirektoriAudio } from "./media/audio.ts";
 import { createAuthMiddleware } from "./middleware/auth.ts";
 import { createAkunRepository } from "./repositories/akun-repository.ts";
 import { createAdminRouter } from "./routes/admin-routes.ts";
@@ -34,6 +35,7 @@ const handleError: ErrorRequestHandler = (error, _req, res, _next) => {
 
 export function createApp({ pool, config }: AppDeps) {
   const app = express();
+  siapkanDirektoriAudio(config.audioDir);
   if (config.secureCookies) {
     app.set("trust proxy", 1);
   }
@@ -53,9 +55,9 @@ export function createApp({ pool, config }: AppDeps) {
     res.json(body);
   });
 
-  app.use("/api", katalogRouter(pool));
+  app.use("/api", katalogRouter(pool, { audioDir: config.audioDir }));
   app.use("/api/auth", createAuthRouter(authController));
-  app.use("/api/admin", createAdminRouter(authMiddleware));
+  app.use("/api/admin", createAdminRouter({ pool, config, authMiddleware }));
 
   app.use(handleError);
 

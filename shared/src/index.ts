@@ -125,3 +125,82 @@ export const daftarGenreResponseSchema = z.object({
 });
 
 export type DaftarGenreResponse = z.infer<typeof daftarGenreResponseSchema>;
+
+export const genreResponseSchema = z.object({
+  data: genreSchema,
+});
+
+export type GenreResponse = z.infer<typeof genreResponseSchema>;
+
+export const genreInputSchema = z.strictObject({
+  nama: z
+    .string()
+    .trim()
+    .min(1, "Nama genre wajib diisi.")
+    .max(100, "Nama genre maksimal 100 karakter."),
+});
+
+export type GenreInput = z.infer<typeof genreInputSchema>;
+
+const teksWajib = (pesan: string, maksimal = 200) =>
+  z.string().trim().min(1, pesan).max(maksimal, `${pesan} terlalu panjang.`);
+
+export const laguInputSchema = z.object({
+  judul: teksWajib("Judul wajib diisi."),
+  artis: teksWajib("Artis wajib diisi."),
+  genreId: z.coerce.number().int().positive("Genre wajib dipilih."),
+  pencipta: teksWajib("Pencipta wajib diisi."),
+  labelRekaman: teksWajib("Label Rekaman wajib diisi."),
+  tanggalRilis: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Tanggal rilis tidak valid."),
+  harga: z.coerce
+    .number()
+    .int("Harga harus bilangan bulat.")
+    .positive("Harga harus lebih dari 0."),
+  tersembunyi: z
+    .union([z.boolean(), z.enum(["true", "false"])])
+    .transform((nilai) => nilai === true || nilai === "true")
+    .optional(),
+});
+
+export type LaguInput = z.infer<typeof laguInputSchema>;
+
+export const laguUbahSchema = laguInputSchema.partial();
+
+export type LaguUbah = z.infer<typeof laguUbahSchema>;
+
+export const laguAdminSchema = laguSchema.extend({
+  tersembunyi: z.boolean(),
+});
+
+export type LaguAdmin = z.infer<typeof laguAdminSchema>;
+
+export const laguAdminResponseSchema = z.object({
+  data: laguAdminSchema,
+});
+
+export type LaguAdminResponse = z.infer<typeof laguAdminResponseSchema>;
+
+export const daftarLaguAdminQuerySchema = daftarLaguQuerySchema.extend({
+  ukuran: z.coerce.number().int().min(1).max(200).default(50),
+});
+
+export type DaftarLaguAdminQuery = z.infer<typeof daftarLaguAdminQuerySchema>;
+
+export const daftarLaguAdminResponseSchema = z.object({
+  data: z.array(laguAdminSchema),
+  meta: metaHalamanSchema,
+});
+
+export type DaftarLaguAdminResponse = z.infer<
+  typeof daftarLaguAdminResponseSchema
+>;
+
+export const tersembunyiLaguRequestSchema = z.strictObject({
+  tersembunyi: z.boolean(),
+});
+
+export type TersembunyiLaguRequest = z.infer<
+  typeof tersembunyiLaguRequestSchema
+>;
