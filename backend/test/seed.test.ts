@@ -13,6 +13,8 @@ import {
   jalankanSeed,
   PELANGGAN_SEED,
   seedKatalog,
+  seedPelanggan,
+  seedPembelian,
 } from "../src/seed.ts";
 import { durasiAudio } from "./audio-helper.ts";
 import { createTestContext } from "./support.ts";
@@ -83,6 +85,94 @@ describe("seed katalog", () => {
 });
 
 describe("seed Data Demo", () => {
+  it("memulihkan ketiga status Pembelian saat seed dijalankan ulang", async () => {
+    await seedPelanggan(pool);
+    await seedKatalog(pool);
+
+    const awal = new Date("2026-05-01T03:00:00.000Z");
+    await seedPembelian(pool, awal);
+
+    const ambilDemo = async () =>
+      (
+        await pool.query<{
+          kode_order: string;
+          status: string;
+          total: number;
+          dibuat_pada: Date;
+          kedaluwarsa_pada: Date;
+          dibayar_pada: Date | null;
+          token_snap: string | null;
+          judul: string[];
+        }>(
+          `SELECT p.kode_order, p.status, p.total, p.dibuat_pada,
+                  p.kedaluwarsa_pada, p.dibayar_pada, p.token_snap,
+                  array_agg(l.judul ORDER BY l.judul) AS judul
+           FROM pembelian p
+           JOIN item_pembelian ip ON ip.pembelian_id = p.id
+           JOIN lagu l ON l.id = ip.lagu_id
+           WHERE p.kode_order LIKE 'MP-DEMO-%'
+           GROUP BY p.id
+           ORDER BY p.kode_order`,
+        )
+      ).rows;
+
+    const pertama = await ambilDemo();
+    expect(pertama.filter((baris) => baris.status === "MENUNGGU_PEMBAYARAN"))
+      .toHaveLength(1);
+    expect(pertama.filter((baris) => baris.status === "LUNAS")).toHaveLength(3);
+    expect(pertama.filter((baris) => baris.status === "GAGAL")).toHaveLength(2);
+
+    // Waktu berjalan lebih dari 24 jam: penyapu sudah menandai Pembelian
+    // Menunggu Pembayaran sebagai Gagal dan masa berlakunya lewat.
+    const nanti = new Date(awal.getTime() + 25 * 60 * 60 * 1000);
+    await pool.query(
+      `UPDATE pembelian
+       SET status = 'GAGAL', kedaluwarsa_pada = $1
+       WHERE kode_order = 'MP-DEMO-MENUNGGU-1'`,
+      [new Date(awal.getTime() - 60 * 60 * 1000)],
+    );
+
+    await seedPembelian(pool, nanti);
+    const kedua = await ambilDemo();
+
+    const pending = kedua.filter(
+      (baris) => baris.status === "MENUNGGU_PEMBAYARAN",
+    );
+    expect(pending).toHaveLength(1);
+    expect(pending[0]!.kode_order).toBe("MP-DEMO-MENUNGGU-1");
+    expect(pending[0]!.kedaluwarsa_pada.getTime()).toBe(
+      nanti.getTime() + 24 * 60 * 60 * 1000,
+    );
+    expect(pending[0]!.token_snap).toBe("demo-snap-token-menunggu");
+    expect(kedua.filter((baris) => baris.status === "LUNAS")).toHaveLength(3);
+    expect(kedua.filter((baris) => baris.status === "GAGAL")).toHaveLength(2);
+
+    // Pembelian yang sudah Lunas atau Gagal tidak diubah tanggalnya, sehingga
+    // data yang terlihat (Laporan Penjualan) tetap sama.
+    const stabil = (baris: typeof pertama) =>
+      baris
+        .filter((item) => item.status !== "MENUNGGU_PEMBAYARAN")
+        .map((item) => ({
+          kode_order: item.kode_order,
+          status: item.status,
+          total: item.total,
+          dibuat_pada: item.dibuat_pada.toISOString(),
+          dibayar_pada: item.dibayar_pada?.toISOString() ?? null,
+          judul: item.judul,
+        }));
+    expect(stabil(kedua)).toEqual(stabil(pertama));
+
+    // Seed berikutnya tetap idempoten: jumlah dan isi tidak bertambah.
+    await seedPembelian(pool, new Date(nanti.getTime() + 60 * 60 * 1000));
+    const ketiga = await ambilDemo();
+    expect(ketiga.map((baris) => baris.kode_order)).toEqual(
+      kedua.map((baris) => baris.kode_order),
+    );
+    expect(
+      ketiga.filter((baris) => baris.status === "MENUNGGU_PEMBAYARAN"),
+    ).toHaveLength(1);
+  });
+
   it("mengisi Admin, Pelanggan, audio, dan Pembelian di ketiga status secara idempoten", { timeout: 120_000 }, async () => {
     await jalankanSeed(pool, ctx.config, () => {});
     const setelahPertama = await hitungDataDemo();

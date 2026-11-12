@@ -184,8 +184,9 @@ export interface PembelianSeed {
 
 /**
  * Pembelian Data Demo. Tanggalnya dihitung dari waktu seed supaya Laporan
- * Penjualan bulan berjalan langsung berisi baris, tetapi baris yang sudah ada
- * tidak diubah saat seed dijalankan ulang.
+ * Penjualan bulan berjalan langsung berisi baris. Seed ulang memperbarui
+ * Pembelian Menunggu Pembayaran (status dan masa berlakunya) agar demo selalu
+ * kembali ke tiga status, tetapi tanggal Pembelian Lunas/Gagal dibiarkan.
  */
 export const PEMBELIAN_SEED: PembelianSeed[] = [
   {
@@ -446,7 +447,9 @@ export async function seedPembelian(
       const dibuatPada =
         pembelian.status === "GAGAL"
           ? new Date(now.getTime() - (3 + indeks) * 24 * 60 * 60 * 1000)
-          : waktuDemo(now, (indeks + 1) * 60);
+          : pembelian.status === "MENUNGGU_PEMBAYARAN"
+            ? now
+            : waktuDemo(now, (indeks + 1) * 60);
       const kedaluwarsaPada = new Date(
         dibuatPada.getTime() + 24 * 60 * 60 * 1000,
       );
@@ -462,7 +465,26 @@ export async function seedPembelian(
          SELECT a.id, $2, $3, $4, $5, $6, $7, $8
          FROM akun a
          WHERE a.email = $1 AND a.peran = 'PELANGGAN'
-         ON CONFLICT (kode_order) DO NOTHING`,
+         ON CONFLICT (kode_order) DO UPDATE
+           SET status = EXCLUDED.status,
+               total = EXCLUDED.total,
+               token_snap = EXCLUDED.token_snap,
+               dibuat_pada = CASE
+                 WHEN EXCLUDED.status = 'MENUNGGU_PEMBAYARAN'
+                 THEN EXCLUDED.dibuat_pada
+                 ELSE pembelian.dibuat_pada
+               END,
+               kedaluwarsa_pada = CASE
+                 WHEN EXCLUDED.status = 'MENUNGGU_PEMBAYARAN'
+                 THEN EXCLUDED.kedaluwarsa_pada
+                 ELSE pembelian.kedaluwarsa_pada
+               END,
+               dibayar_pada = CASE
+                 WHEN EXCLUDED.status = 'LUNAS'
+                 THEN COALESCE(pembelian.dibayar_pada, EXCLUDED.dibayar_pada)
+                 WHEN EXCLUDED.status = 'MENUNGGU_PEMBAYARAN' THEN NULL
+                 ELSE pembelian.dibayar_pada
+               END`,
         [
           pembelian.email,
           pembelian.status,
