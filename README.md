@@ -213,7 +213,7 @@ KONFIRMASI_RESTORE=ya ./scripts/restore.sh backups/backup-20261112T130317Z
 KONFIRMASI_RESTORE=ya ./scripts/restore.sh
 ```
 Restore sengaja menolak berjalan tanpa `KONFIRMASI_RESTORE=ya`. Script:
-1. memeriksa `database.sql` dan `audio.tar.gz`;
+1. memeriksa `database.sql`, `audio.tar.gz`, dan checksum `SHA256SUMS` bila ada;
 2. menghentikan backend agar tidak menulis saat restore;
 3. memulihkan dump dengan `psql -1 -v ON_ERROR_STOP=1` (satu transaksi);
 4. mengosongkan lalu mengekstrak volume audio lewat container satu kali;

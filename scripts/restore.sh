@@ -45,6 +45,10 @@ fi
 [[ -n "$sumber" && -d "$sumber" ]] || die "Direktori backup tidak ditemukan: ${sumber:-<kosong>}"
 [[ -s "$sumber/database.sql" ]] || die "$sumber/database.sql tidak ada atau kosong."
 [[ -s "$sumber/audio.tar.gz" ]] || die "$sumber/audio.tar.gz tidak ada atau kosong."
+if [[ -s "$sumber/SHA256SUMS" ]]; then
+  (cd "$sumber" && sha256sum -c SHA256SUMS >/dev/null) \
+    || die "Checksum backup tidak cocok: $sumber/SHA256SUMS."
+fi
 
 command -v docker >/dev/null 2>&1 || die "docker tidak ditemukan."
 [[ -f "$COMPOSE_FILE" ]] || die "Compose file $COMPOSE_FILE tidak ditemukan."
