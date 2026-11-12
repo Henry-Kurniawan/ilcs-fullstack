@@ -1,30 +1,13 @@
 import PDFDocument from "pdfkit";
 import ExcelJS from "exceljs";
 import type { LaporanResponse } from "@musicpedia/shared";
+import { formatTanggalBayarJakarta } from "@musicpedia/shared";
 
 const formatRupiah = new Intl.NumberFormat("id-ID", {
   style: "currency",
   currency: "IDR",
   maximumFractionDigits: 0,
 });
-
-const formatTanggal = new Intl.DateTimeFormat("en-GB", {
-  timeZone: "Asia/Jakarta",
-  day: "2-digit",
-  month: "2-digit",
-  year: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-  hourCycle: "h23",
-});
-
-/** Tanggal bayar dalam zona waktu Asia/Jakarta, mis. "05/11/2026 10:00". */
-export function formatTanggalBayar(iso: string): string {
-  const bagian = formatTanggal.formatToParts(new Date(iso));
-  const nilai = (tipe: Intl.DateTimeFormatPartTypes) =>
-    bagian.find((item) => item.type === tipe)?.value ?? "";
-  return `${nilai("day")}/${nilai("month")}/${nilai("year")} ${nilai("hour")}:${nilai("minute")}`;
-}
 
 export function formatTanggalPeriode(tanggal: string): string {
   const [tahun, bulan, hari] = tanggal.split("-");
@@ -110,7 +93,7 @@ export async function buatPdfLaporan(
     barisBaru(doc);
     const y = doc.y;
     const nilai = [
-      formatTanggalBayar(baris.tanggalBayar),
+      formatTanggalBayarJakarta(baris.tanggalBayar),
       baris.judul,
       baris.artis,
       baris.pelanggan,
@@ -175,7 +158,7 @@ export async function buatExcelLaporan(
 
   for (const baris of laporan.data) {
     sheet.addRow({
-      tanggalBayar: formatTanggalBayar(baris.tanggalBayar),
+      tanggalBayar: formatTanggalBayarJakarta(baris.tanggalBayar),
       judul: baris.judul,
       artis: baris.artis,
       pelanggan: baris.pelanggan,

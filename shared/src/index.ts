@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+export { formatTanggalBayarJakarta } from "./tanggal.ts";
+
 export const healthResponseSchema = z.object({
   status: z.literal("ok"),
   database: z.literal("up"),

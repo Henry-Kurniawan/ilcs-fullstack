@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import {
+  formatTanggalBayarJakarta,
   laporanResponseSchema,
   type LaporanResponse,
 } from "@musicpedia/shared";
@@ -11,23 +12,6 @@ type Status = "memuat" | "siap" | "gagal";
 
 const kelasInput =
   "mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-200";
-
-const formatTanggalBayar = new Intl.DateTimeFormat("id-ID", {
-  timeZone: "Asia/Jakarta",
-  day: "2-digit",
-  month: "2-digit",
-  year: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-  hourCycle: "h23",
-});
-
-function tanggalBayarJakarta(iso: string): string {
-  const bagian = formatTanggalBayar.formatToParts(new Date(iso));
-  const nilai = (tipe: Intl.DateTimeFormatPartTypes) =>
-    bagian.find((item) => item.type === tipe)?.value ?? "";
-  return `${nilai("day")}/${nilai("month")}/${nilai("year")} ${nilai("hour")}:${nilai("minute")}`;
-}
 
 function rentangBulanIni(): { dari: string; sampai: string } {
   const hariIni = new Intl.DateTimeFormat("en-CA", {
@@ -207,7 +191,7 @@ export function AdminLaporanPage() {
                       className="hover:bg-slate-50"
                     >
                       <td className="whitespace-nowrap px-4 py-3 text-slate-700">
-                        {tanggalBayarJakarta(baris.tanggalBayar)}
+                        {formatTanggalBayarJakarta(baris.tanggalBayar)}
                       </td>
                       <td className="px-4 py-3 font-medium text-slate-900">
                         {baris.judul}
