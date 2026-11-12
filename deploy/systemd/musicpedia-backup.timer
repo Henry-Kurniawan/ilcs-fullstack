@@ -1,0 +1,13 @@
+[Unit]
+Description=Jadwal backup harian MusicPedia
+
+[Timer]
+# Setiap hari pukul 02:17 waktu server. Persistent menjalankan backup yang
+# terlewat setelah server mati/reboot.
+OnCalendar=*-*-* 02:17:00
+Persistent=true
+RandomizedDelaySec=300
+Unit=musicpedia-backup.service
+
+[Install]
+WantedBy=timers.target
