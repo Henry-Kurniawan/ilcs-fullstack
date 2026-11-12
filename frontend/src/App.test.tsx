@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { afterEach, expect, it, vi } from "vitest";
 import { App } from "./App.tsx";
@@ -7,6 +7,7 @@ import { App } from "./App.tsx";
 type AkunUji = {
   id: number;
   email: string;
+  nama: string;
   peran: "PELANGGAN" | "ADMIN";
   aktif: boolean;
 };
@@ -36,7 +37,11 @@ function stubFetch(akun: AkunUji | null = null) {
               data: [laguAdmin],
               meta: { halaman: 1, ukuran: 50, total: 1, totalHalaman: 1 },
             }
-          : url.startsWith("/api/genre")
+          : url.startsWith("/api/keranjang")
+            ? {
+                data: { items: [lagu], total: lagu.harga, jumlah: 1 },
+              }
+            : url.startsWith("/api/genre")
             ? { data: [lagu.genre] }
             : url === `/api/lagu/${lagu.id}`
               ? { data: lagu }
@@ -112,6 +117,7 @@ it("menampilkan email dan tombol keluar saat Pelanggan sudah masuk", async () =>
   stubFetch({
     id: 1,
     email: "siti@example.com",
+    nama: "Siti Rahma",
     peran: "PELANGGAN",
     aktif: true,
   });
@@ -134,6 +140,7 @@ it("menampilkan daftar Lagu termasuk yang disembunyikan untuk Admin", async () =
   stubFetch({
     id: 2,
     email: "admin@musicpedia.id",
+    nama: "Admin Musikapedia",
     peran: "ADMIN",
     aktif: true,
   });
@@ -143,4 +150,69 @@ it("menampilkan daftar Lagu termasuk yang disembunyikan untuk Admin", async () =
   expect(await screen.findByText("Cahaya Pagi")).toBeTruthy();
   expect(screen.getByText("Disembunyikan")).toBeTruthy();
   expect(screen.getByRole("button", { name: "Tampilkan" })).toBeTruthy();
+});
+
+it("menampilkan jumlah Lagu di indikator Keranjang pada header", async () => {
+  stubFetch({
+    id: 1,
+    email: "siti@example.com",
+    nama: "Siti Rahma",
+    peran: "PELANGGAN",
+    aktif: true,
+  });
+  renderRute("/");
+
+  expect(
+    await screen.findByRole("link", { name: "Keranjang, 1 Lagu" }),
+  ).toBeTruthy();
+});
+
+it("menampilkan halaman Keranjang Pelanggan", async () => {
+  stubFetch({
+    id: 1,
+    email: "siti@example.com",
+    nama: "Siti Rahma",
+    peran: "PELANGGAN",
+    aktif: true,
+  });
+  renderRute("/keranjang");
+
+  expect(
+    await screen.findByRole("heading", { name: "Keranjang" }),
+  ).toBeTruthy();
+  expect(await screen.findByText("Cahaya Pagi")).toBeTruthy();
+  expect(screen.getByText("Rina Prasetya")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Hapus" })).toBeTruthy();
+  expect(screen.getByText(/^Total/).textContent).toContain("25.000");
+});
+
+it("mengarahkan Pengunjung ke login saat menambah Lagu ke Keranjang", async () => {
+  stubFetch(null);
+  renderRute("/");
+
+  const tombol = await screen.findByRole("button", {
+    name: "Tambah ke Keranjang",
+  });
+  fireEvent.click(tombol);
+
+  expect(await screen.findByRole("heading", { name: "Masuk" })).toBeTruthy();
+});
+
+it("menampilkan halaman profil Pelanggan", async () => {
+  stubFetch({
+    id: 1,
+    email: "siti@example.com",
+    nama: "Siti Rahma",
+    peran: "PELANGGAN",
+    aktif: true,
+  });
+  renderRute("/profil");
+
+  expect(await screen.findByRole("heading", { name: "Profil" })).toBeTruthy();
+  expect(screen.getByLabelText("Nama")).toBeTruthy();
+  expect(screen.getByDisplayValue("Siti Rahma")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Simpan" })).toBeTruthy();
+  expect(screen.getByLabelText("Kata sandi lama")).toBeTruthy();
+  expect(screen.getByLabelText("Kata sandi baru")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Ganti kata sandi" })).toBeTruthy();
 });

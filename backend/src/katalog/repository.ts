@@ -1,7 +1,7 @@
 import type { Genre, Lagu } from "@musicpedia/shared";
 import type { Pool } from "../db.ts";
 
-interface BarisLagu {
+export interface BarisLagu {
   id: number;
   judul: string;
   artis: string;
@@ -20,7 +20,7 @@ export interface FilterLagu {
   offset: number;
 }
 
-const KOLOM_LAGU = `
+export const KOLOM_LAGU = `
   l.id,
   l.judul,
   l.artis,
@@ -36,7 +36,7 @@ function polaCari(cari: string): string {
   return `%${cari.replace(/[\\%_]/g, "\\$&")}%`;
 }
 
-function keLagu(baris: BarisLagu): Lagu {
+export function keLagu(baris: BarisLagu): Lagu {
   return {
     id: baris.id,
     judul: baris.judul,
