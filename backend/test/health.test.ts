@@ -3,6 +3,7 @@ import request from "supertest";
 import { afterAll, describe, expect, it } from "vitest";
 import { healthResponseSchema } from "@musicpedia/shared";
 import { createApp } from "../src/app.ts";
+import { loadConfig } from "../src/config.ts";
 import { withTransaction } from "../src/db.ts";
 import { testDatabaseUrl } from "./global-setup.ts";
 
@@ -12,7 +13,7 @@ afterAll(() => pool.end());
 
 describe("GET /api/health", () => {
   it("melaporkan database aktif dengan bentuk yang sesuai skema shared", async () => {
-    const app = createApp({ pool, config: { port: 0, databaseUrl } });
+    const app = createApp({ pool, config: { ...loadConfig(), databaseUrl } });
     const res = await request(app).get("/api/health").expect(200);
     expect(healthResponseSchema.parse(res.body)).toEqual({
       status: "ok",

@@ -1,0 +1,338 @@
+import type {
+  ItemPembelian,
+  Pembelian,
+  StatusPembelian,
+} from "@musicpedia/shared";
+import type { Db, Pool } from "../db.ts";
+
+export interface PelangganTerkunci {
+  id: number;
+  nama: string;
+  email: string;
+}
+
+export interface LaguCheckout {
+  laguId: number;
+  judul: string;
+  artis: string;
+  harga: number;
+}
+
+export interface StatusKepemilikan {
+  laguId: number;
+  lunas: boolean;
+  menunggu: boolean;
+}
+
+/** Mengunci baris Pelanggan sehingga dua checkout tidak berjalan bersamaan. */
+export async function kunciPelanggan(
+  db: Db,
+  pelangganId: number,
+): Promise<PelangganTerkunci | null> {
+  const { rows } = await db.query<PelangganTerkunci>(
+    "SELECT id, nama, email FROM akun WHERE id = $1 FOR UPDATE",
+    [pelangganId],
+  );
+  return rows[0] ?? null;
+}
+
+/**
+ * Membuang baris Keranjang yang Lagunya sudah disembunyikan Admin. Lagu itu
+ * tidak tampil di UI dan tidak bisa dihapus Pelanggan, jadi checkout harus
+ * membersihkannya sendiri agar tidak menghalangi sisa Keranjang.
+ */
+export async function buangLaguTersembunyiDariKeranjang(
+  db: Db,
+  pelangganId: number,
+): Promise<void> {
+  await db.query(
+    `DELETE FROM keranjang k
+     USING lagu l
+     WHERE l.id = k.lagu_id
+       AND k.pelanggan_id = $1
+       AND l.tersembunyi = true`,
+    [pelangganId],
+  );
+}
+
+export async function laguDiKeranjang(
+  db: Db,
+  pelangganId: number,
+): Promise<LaguCheckout[]> {
+  const { rows } = await db.query<{
+    lagu_id: number;
+    judul: string;
+    artis: string;
+    harga: number;
+  }>(
+    `SELECT l.id AS lagu_id, l.judul, l.artis, l.harga
+     FROM keranjang k
+     JOIN lagu l ON l.id = k.lagu_id
+     WHERE k.pelanggan_id = $1 AND l.tersembunyi = false
+     ORDER BY k.dibuat_pada ASC, l.id ASC`,
+    [pelangganId],
+  );
+
+  return rows.map((baris) => ({
+    laguId: baris.lagu_id,
+    judul: baris.judul,
+    artis: baris.artis,
+    harga: baris.harga,
+  }));
+}
+
+export async function statusKepemilikan(
+  db: Db,
+  pelangganId: number,
+  laguIds: number[],
+): Promise<StatusKepemilikan[]> {
+  if (laguIds.length === 0) return [];
+  const { rows } = await db.query<{
+    lagu_id: number;
+    lunas: boolean;
+    menunggu: boolean;
+  }>(
+    `SELECT ip.lagu_id,
+            bool_or(p.status = 'LUNAS') AS lunas,
+            bool_or(p.status = 'MENUNGGU_PEMBAYARAN') AS menunggu
+     FROM item_pembelian ip
+     JOIN pembelian p ON p.id = ip.pembelian_id
+     WHERE p.pelanggan_id = $1 AND ip.lagu_id = ANY($2::integer[])
+     GROUP BY ip.lagu_id`,
+    [pelangganId, laguIds],
+  );
+
+  return rows.map((baris) => ({
+    laguId: baris.lagu_id,
+    lunas: baris.lunas,
+    menunggu: baris.menunggu,
+  }));
+}
+
+export interface DataPembelianBaru {
+  pelangganId: number;
+  total: number;
+  kodeOrder: string;
+}
+
+export async function buatPembelian(
+  db: Db,
+  data: DataPembelianBaru,
+): Promise<number> {
+  const { rows } = await db.query<{ id: number }>(
+    `INSERT INTO pembelian (pelanggan_id, status, total, kode_order)
+     VALUES ($1, 'MENUNGGU_PEMBAYARAN', $2, $3)
+     RETURNING id`,
+    [data.pelangganId, data.total, data.kodeOrder],
+  );
+  return rows[0]!.id;
+}
+
+export async function tambahItemPembelian(
+  db: Db,
+  pembelianId: number,
+  item: Array<{ laguId: number; harga: number }>,
+): Promise<void> {
+  for (const { laguId, harga } of item) {
+    await db.query(
+      `INSERT INTO item_pembelian (pembelian_id, lagu_id, harga)
+       VALUES ($1, $2, $3)`,
+      [pembelianId, laguId, harga],
+    );
+  }
+}
+
+export async function kosongkanKeranjang(
+  db: Db,
+  pelangganId: number,
+): Promise<void> {
+  await db.query("DELETE FROM keranjang WHERE pelanggan_id = $1", [
+    pelangganId,
+  ]);
+}
+
+export async function simpanTokenSnap(
+  db: Db,
+  pembelianId: number,
+  token: string,
+): Promise<void> {
+  await db.query("UPDATE pembelian SET token_snap = $2 WHERE id = $1", [
+    pembelianId,
+    token,
+  ]);
+}
+
+interface BarisRiwayat {
+  id: number;
+  kode_order: string;
+  status: StatusPembelian;
+  total: number;
+  dibuat_pada: Date;
+  dibayar_pada: Date | null;
+  kedaluwarsa_pada: Date;
+  token_snap: string | null;
+  lagu_id: number;
+  judul: string;
+  artis: string;
+  harga: number;
+}
+
+const KOLOM_RIWAYAT = `
+  p.id,
+  p.kode_order,
+  p.status,
+  p.total,
+  p.dibuat_pada,
+  p.dibayar_pada,
+  p.kedaluwarsa_pada,
+  p.token_snap,
+  ip.lagu_id,
+  l.judul,
+  l.artis,
+  ip.harga
+`;
+
+function kePembelian(baris: BarisRiwayat[]): Pembelian {
+  const pertama = baris[0]!;
+  const itemPembelian: ItemPembelian[] = baris.map((item) => ({
+    laguId: item.lagu_id,
+    judul: item.judul,
+    artis: item.artis,
+    harga: item.harga,
+  }));
+
+  return {
+    id: pertama.id,
+    kodeOrder: pertama.kode_order,
+    status: pertama.status,
+    total: pertama.total,
+    dibuatPada: pertama.dibuat_pada.toISOString(),
+    dibayarPada: pertama.dibayar_pada?.toISOString() ?? null,
+    kedaluwarsaPada: pertama.kedaluwarsa_pada.toISOString(),
+    itemPembelian,
+  };
+}
+
+export type StatusAkhirPembelian = Exclude<
+  StatusPembelian,
+  "MENUNGGU_PEMBAYARAN"
+>;
+
+/**
+ * Transisi status Pembelian yang hanya berlaku dari Menunggu Pembayaran.
+ * Dipakai webhook: notifikasi ganda atau notifikasi terlambat setelah Pembelian
+ * Gagal tidak mengubah apa pun. `dibayar_pada` hanya diisi saat menjadi Lunas.
+ *
+ * Mengembalikan true bila baris benar-benar berubah.
+ */
+export async function transisiPembelian(
+  db: Db,
+  pembelianId: number,
+  statusBaru: StatusAkhirPembelian,
+  dibayarPada: Date | null = null,
+): Promise<boolean> {
+  const { rowCount } = await db.query(
+    `UPDATE pembelian
+     SET status = $2,
+         dibayar_pada = CASE
+           WHEN $2 = 'LUNAS' THEN COALESCE($3::timestamptz, now())
+           ELSE dibayar_pada
+         END
+     WHERE id = $1 AND status = 'MENUNGGU_PEMBAYARAN'`,
+    [pembelianId, statusBaru, dibayarPada],
+  );
+  return (rowCount ?? 0) > 0;
+}
+
+/**
+ * Menandai Pembelian Menunggu Pembayaran yang sudah lewat masa berlakunya
+ * sebagai Gagal. Hanya berlaku dari Menunggu Pembayaran sehingga Pembelian
+ * Lunas atau Gagal tidak tersentuh. Mengembalikan jumlah baris yang berubah.
+ */
+export async function gagalkanPembelianKedaluwarsa(
+  pool: Pool,
+  now: Date,
+): Promise<number> {
+  const { rowCount } = await pool.query(
+    `UPDATE pembelian
+     SET status = 'GAGAL'
+     WHERE status = 'MENUNGGU_PEMBAYARAN'
+       AND kedaluwarsa_pada <= $1`,
+    [now],
+  );
+  return rowCount ?? 0;
+}
+
+export async function daftarPembelian(
+  pool: Pool,
+  pelangganId: number,
+): Promise<Pembelian[]> {
+  const { rows } = await pool.query<BarisRiwayat>(
+    `SELECT ${KOLOM_RIWAYAT}
+     FROM pembelian p
+     JOIN item_pembelian ip ON ip.pembelian_id = p.id
+     JOIN lagu l ON l.id = ip.lagu_id
+     WHERE p.pelanggan_id = $1
+     ORDER BY p.dibuat_pada DESC, p.id DESC, ip.lagu_id ASC`,
+    [pelangganId],
+  );
+
+  const perPembelian = new Map<number, BarisRiwayat[]>();
+  for (const baris of rows) {
+    const kumpulan = perPembelian.get(baris.id);
+    if (kumpulan) {
+      kumpulan.push(baris);
+    } else {
+      perPembelian.set(baris.id, [baris]);
+    }
+  }
+
+  return [...perPembelian.values()].map(kePembelian);
+}
+
+export interface PembelianDikenal {
+  id: number;
+  status: StatusPembelian;
+}
+
+/**
+ * Pembelian dengan kode order ini, atau null bila notifikasi asing. Dipakai
+ * webhook untuk memetakan kode order Midtrans ke Pembelian sebelum transisi.
+ */
+export async function pembelianDenganKodeOrder(
+  pool: Pool,
+  kodeOrder: string,
+): Promise<PembelianDikenal | null> {
+  const { rows } = await pool.query<{
+    id: number;
+    status: StatusPembelian;
+  }>("SELECT id, status FROM pembelian WHERE kode_order = $1", [kodeOrder]);
+  return rows[0] ?? null;
+}
+
+export interface PembelianDenganToken {
+  pembelian: Pembelian;
+  tokenSnap: string | null;
+}
+
+export async function ambilPembelianMilik(
+  pool: Pool,
+  pelangganId: number,
+  id: number,
+): Promise<PembelianDenganToken | null> {
+  const { rows } = await pool.query<BarisRiwayat>(
+    `SELECT ${KOLOM_RIWAYAT}
+     FROM pembelian p
+     JOIN item_pembelian ip ON ip.pembelian_id = p.id
+     JOIN lagu l ON l.id = ip.lagu_id
+     WHERE p.pelanggan_id = $1 AND p.id = $2
+     ORDER BY ip.lagu_id ASC`,
+    [pelangganId, id],
+  );
+
+  if (rows.length === 0) return null;
+  return {
+    pembelian: kePembelian(rows),
+    tokenSnap: rows[0]!.token_snap,
+  };
+}

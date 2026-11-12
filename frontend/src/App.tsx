@@ -1,10 +1,87 @@
 import { Route, Routes } from "react-router";
-import { HomePage } from "./HomePage.tsx";
+import { AdminGenrePage } from "./admin/AdminGenrePage.tsx";
+import { AdminLaguFormPage } from "./admin/AdminLaguFormPage.tsx";
+import { AdminLaguPage } from "./admin/AdminLaguPage.tsx";
+import { AdminLaporanPage } from "./admin/AdminLaporanPage.tsx";
+import { PerluAdmin } from "./admin/PerluAdmin.tsx";
+import { AuthProvider } from "./auth/AuthContext.tsx";
+import { KatalogPage } from "./KatalogPage.tsx";
+import { LaguDetailPage } from "./LaguDetailPage.tsx";
+import { Layout } from "./Layout.tsx";
+import { AdminPelangganPage } from "./pages/AdminPelangganPage.tsx";
+import { KeranjangProvider } from "./keranjang/KeranjangContext.tsx";
+import { KeranjangPage } from "./pages/KeranjangPage.tsx";
+import { LaguSayaPage } from "./pages/LaguSayaPage.tsx";
+import { LoginPage } from "./pages/LoginPage.tsx";
+import { PembelianPage } from "./pages/PembelianPage.tsx";
+import { ProfilePage } from "./pages/ProfilePage.tsx";
+import { RegisterPage } from "./pages/RegisterPage.tsx";
 
 export function App() {
   return (
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-    </Routes>
+    <AuthProvider>
+      <KeranjangProvider>
+        <Routes>
+          <Route element={<Layout />}>
+            <Route index element={<KatalogPage />} />
+            <Route path="lagu/:id" element={<LaguDetailPage />} />
+            <Route path="keranjang" element={<KeranjangPage />} />
+            <Route path="pembelian" element={<PembelianPage />} />
+            <Route path="lagu-saya" element={<LaguSayaPage />} />
+            <Route path="registrasi" element={<RegisterPage />} />
+            <Route path="masuk" element={<LoginPage />} />
+            <Route path="profil" element={<ProfilePage />} />
+            <Route
+              path="admin/lagu"
+              element={
+                <PerluAdmin>
+                  <AdminLaguPage />
+                </PerluAdmin>
+              }
+            />
+            <Route
+              path="admin/lagu/baru"
+              element={
+                <PerluAdmin>
+                  <AdminLaguFormPage />
+                </PerluAdmin>
+              }
+            />
+            <Route
+              path="admin/lagu/:id/ubah"
+              element={
+                <PerluAdmin>
+                  <AdminLaguFormPage />
+                </PerluAdmin>
+              }
+            />
+            <Route
+              path="admin/genre"
+              element={
+                <PerluAdmin>
+                  <AdminGenrePage />
+                </PerluAdmin>
+              }
+            />
+            <Route
+              path="admin/laporan"
+              element={
+                <PerluAdmin>
+                  <AdminLaporanPage />
+                </PerluAdmin>
+              }
+            />
+            <Route
+              path="admin/pelanggan"
+              element={
+                <PerluAdmin>
+                  <AdminPelangganPage />
+                </PerluAdmin>
+              }
+            />
+          </Route>
+        </Routes>
+      </KeranjangProvider>
+    </AuthProvider>
   );
 }

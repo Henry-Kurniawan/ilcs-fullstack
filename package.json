@@ -10,7 +10,15 @@
     "dev": "npm run db:up && npm run migrate && concurrently -n backend,frontend -c blue,green \"npm run dev -w backend\" \"npm run dev -w frontend\"",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run typecheck && npm run db:up && vitest run",
-    "build": "npm run build -w frontend"
+    "seed": "npm run seed --workspace backend",
+    "build": "npm run build -w frontend",
+    "prod:up": "docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build --wait",
+    "prod:down": "docker compose -f docker-compose.prod.yml --env-file .env.production down",
+    "prod:logs": "docker compose -f docker-compose.prod.yml --env-file .env.production logs -f --tail=100",
+    "prod:seed": "docker compose -f docker-compose.prod.yml --env-file .env.production exec -T backend node backend/src/seed.ts",
+    "certs": "./scripts/gen-certs.sh",
+    "backup": "./scripts/backup.sh",
+    "restore": "./scripts/restore.sh"
   },
   "devDependencies": {
     "concurrently": "^9.0.0",

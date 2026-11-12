@@ -1,4 +1,14 @@
 node_modules
 dist
 .env
+.env.*
+!.env.example
+!.env.production.example
 *.log
+.tools
+audio
+backend/audio
+certs
+backups
+*.dump
+*.sql.gz

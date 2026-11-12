@@ -2,6 +2,9 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
+    // Tes backend memakai satu database PostgreSQL bersama; file tes tidak boleh
+    // saling menimpa data. Jalankan satu file pada satu waktu.
+    fileParallelism: false,
     projects: [
       {
         test: {

@@ -1,6 +1,7 @@
 import pg from "pg";
 import { createApp } from "./app.ts";
 import { loadConfig } from "./config.ts";
+import { mulaiPenyapu } from "./pembelian/penyapu.ts";
 
 const config = loadConfig();
 const pool = new pg.Pool({ connectionString: config.databaseUrl });
@@ -9,6 +10,10 @@ const server = createApp({ pool, config }).listen(config.port, () => {
   console.log(`Backend listening on :${config.port}`);
 });
 
+// Penyapu Gagal hanya dijalankan di proses backend sungguhan, bukan saat tes.
+const hentikanPenyapu = mulaiPenyapu(pool);
+
 process.on("SIGTERM", () => {
+  hentikanPenyapu();
   server.close(() => void pool.end());
 });
