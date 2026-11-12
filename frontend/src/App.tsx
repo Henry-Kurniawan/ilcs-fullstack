@@ -1,10 +1,20 @@
 import { Route, Routes } from "react-router";
-import { HomePage } from "./HomePage.tsx";
+import { AuthProvider } from "./auth/AuthContext.tsx";
+import { Layout } from "./Layout.tsx";
+import { HomePage } from "./pages/HomePage.tsx";
+import { LoginPage } from "./pages/LoginPage.tsx";
+import { RegisterPage } from "./pages/RegisterPage.tsx";
 
 export function App() {
   return (
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-    </Routes>
+    <AuthProvider>
+      <Routes>
+        <Route element={<Layout />}>
+          <Route index element={<HomePage />} />
+          <Route path="registrasi" element={<RegisterPage />} />
+          <Route path="masuk" element={<LoginPage />} />
+        </Route>
+      </Routes>
+    </AuthProvider>
   );
 }
