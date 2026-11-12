@@ -7,6 +7,7 @@ import { App } from "./App.tsx";
 type AkunUji = {
   id: number;
   email: string;
+  nama: string;
   peran: "PELANGGAN" | "ADMIN";
   aktif: boolean;
 };
@@ -68,6 +69,7 @@ it("menampilkan email dan tombol keluar saat Pelanggan sudah masuk", async () =>
   stubSesi({
     id: 1,
     email: "siti@example.com",
+    nama: "Siti Rahma",
     peran: "PELANGGAN",
     aktif: true,
   });
@@ -76,3 +78,23 @@ it("menampilkan email dan tombol keluar saat Pelanggan sudah masuk", async () =>
   expect(await screen.findByText("siti@example.com")).toBeTruthy();
   expect(screen.getByRole("button", { name: "Keluar" })).toBeTruthy();
 });
+
+it("menampilkan halaman profil Pelanggan", async () => {
+  stubSesi({
+    id: 1,
+    email: "siti@example.com",
+    nama: "Siti Rahma",
+    peran: "PELANGGAN",
+    aktif: true,
+  });
+  renderRute("/profil");
+
+  expect(await screen.findByRole("heading", { name: "Profil" })).toBeTruthy();
+  expect(screen.getByLabelText("Nama")).toBeTruthy();
+  expect(screen.getByDisplayValue("Siti Rahma")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Simpan" })).toBeTruthy();
+  expect(screen.getByLabelText("Kata sandi lama")).toBeTruthy();
+  expect(screen.getByLabelText("Kata sandi baru")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Ganti kata sandi" })).toBeTruthy();
+});
+

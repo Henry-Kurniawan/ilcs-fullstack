@@ -3,6 +3,7 @@ import { AuthProvider } from "./auth/AuthContext.tsx";
 import { Layout } from "./Layout.tsx";
 import { HomePage } from "./pages/HomePage.tsx";
 import { LoginPage } from "./pages/LoginPage.tsx";
+import { ProfilePage } from "./pages/ProfilePage.tsx";
 import { RegisterPage } from "./pages/RegisterPage.tsx";
 
 export function App() {
@@ -13,6 +14,7 @@ export function App() {
           <Route index element={<HomePage />} />
           <Route path="registrasi" element={<RegisterPage />} />
           <Route path="masuk" element={<LoginPage />} />
+          <Route path="profil" element={<ProfilePage />} />
         </Route>
       </Routes>
     </AuthProvider>
