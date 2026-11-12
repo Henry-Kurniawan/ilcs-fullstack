@@ -10,7 +10,8 @@ import { createAuthController } from "./controllers/auth-controller.ts";
 import { createProfilController } from "./controllers/profil-controller.ts";
 import type { Pool } from "./db.ts";
 import { AppError } from "./errors.ts";
-import { katalogRouter } from "./katalog/controller.ts";
+import { createKatalogController, katalogRouter } from "./katalog/controller.ts";
+import { createKatalogService } from "./katalog/service.ts";
 import {
   createKeranjangController,
   keranjangRouter,
@@ -130,7 +131,12 @@ export function createApp({ pool, config, paymentGateway }: AppDeps) {
     audioDir: config.audioDir,
   });
 
-  app.use("/api", katalogRouter(pool, { audioDir: config.audioDir }));
+  const katalogController = createKatalogController({
+    service: createKatalogService(pool),
+    audioDir: config.audioDir,
+  });
+
+  app.use("/api", katalogRouter(katalogController));
   app.use("/api", unduhanRouter(unduhanController, authMiddleware));
   app.use("/api", keranjangRouter(keranjangController, authMiddleware));
   app.use("/api", pembelianRouter(pembelianController, authMiddleware));
