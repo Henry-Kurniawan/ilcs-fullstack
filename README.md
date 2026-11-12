@@ -27,6 +27,7 @@ Buka http://localhost:5173. Halaman awal menampilkan katalog Lagu dari `/api/lag
 ## Akun dan sesi
 - Registrasi hanya membuat Pelanggan. Admin tidak pernah dibuat lewat registrasi.
 - `npm run seed` bersifat idempoten: menjalankannya berulang kali tetap menghasilkan satu Admin, dan tidak menggandakan Genre maupun Lagu Data Demo.
+- Tabel `akun` menyimpan `nama` (teks, default kosong sampai Pelanggan mengisi profilnya sendiri). Kolom ini dipakai halaman profil Pelanggan dan area Admin untuk mencari serta mengubah data Pelanggan.
 - Sesi disimpan di tabel `sesi` PostgreSQL lewat cookie `musicpedia.sid` (`httpOnly`, `SameSite=Lax`, `Secure` bila `NODE_ENV=production`). Alasannya ada di [ADR 0003](docs/adr/0003-sesi-di-postgresql.md).
 - `SESSION_SECRET` wajib diisi di produksi. `ADMIN_PASSWORD` juga wajib diisi saat menjalankan seed di produksi.
 
