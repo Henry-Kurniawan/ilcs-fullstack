@@ -42,6 +42,12 @@ export function Header() {
                   >
                     Pelanggan
                   </Link>
+                  <Link
+                    to="/admin/laporan"
+                    className="font-medium text-slate-700 hover:underline"
+                  >
+                    Laporan
+                  </Link>
                 </>
               ) : null}
               {akun.peran === "PELANGGAN" ? (
