@@ -292,3 +292,125 @@ describe("PATCH /api/admin/pelanggan/:id", () => {
   });
 });
 
+describe("PATCH /api/admin/pelanggan/:id/aktif", () => {
+  it("menonaktifkan Pelanggan langsung memutus sesi aktifnya dan menolak login", async () => {
+    const agentSiti = await daftarSebagaiPelanggan(siti);
+    const agentAdmin = await masukAdmin();
+    const id = await cariIdPelanggan(agentAdmin, siti.email);
+
+    const res = await agentAdmin
+      .patch(`/api/admin/pelanggan/${id}/aktif`)
+      .send({ aktif: false })
+      .expect(200);
+    expect(res.body.data).toEqual({
+      id,
+      email: siti.email,
+      nama: "",
+      aktif: false,
+    });
+
+    const sesudah = await agentSiti.get("/api/profil").expect(401);
+    expect(sesudah.body.code).toBe("BELUM_MASUK");
+
+    const login = await request(app)
+      .post("/api/auth/login")
+      .send(siti)
+      .expect(403);
+    expect(login.body).toEqual({
+      error: "Akun Anda dinonaktifkan. Hubungi Admin.",
+      code: "AKUN_NONAKTIF",
+    });
+  });
+
+  it("mengaktifkan kembali Pelanggan membuatnya bisa login lagi", async () => {
+    await daftarSebagaiPelanggan(siti);
+    const agentAdmin = await masukAdmin();
+    const id = await cariIdPelanggan(agentAdmin, siti.email);
+
+    await agentAdmin
+      .patch(`/api/admin/pelanggan/${id}/aktif`)
+      .send({ aktif: false })
+      .expect(200);
+    await agentAdmin
+      .patch(`/api/admin/pelanggan/${id}/aktif`)
+      .send({ aktif: true })
+      .expect(200);
+
+    const login = await request(app)
+      .post("/api/auth/login")
+      .send(siti)
+      .expect(200);
+    expect(login.body.akun).toMatchObject({ email: siti.email, aktif: true });
+  });
+
+  it("menolak Admin menonaktifkan akunnya sendiri", async () => {
+    const agentAdmin = await masukAdmin();
+    const me = await agentAdmin.get("/api/auth/me").expect(200);
+
+    const res = await agentAdmin
+      .patch(`/api/admin/pelanggan/${me.body.akun.id}/aktif`)
+      .send({ aktif: false })
+      .expect(400);
+
+    expect(res.body).toEqual({
+      error: "Admin tidak dapat menonaktifkan akunnya sendiri.",
+      code: "AKSI_TIDAK_DIIZINKAN",
+    });
+
+    const meLagi = await agentAdmin.get("/api/auth/me").expect(200);
+    expect(meLagi.body.akun.aktif).toBe(true);
+  });
+
+  it("menolak badan permintaan yang tidak valid", async () => {
+    await daftarSebagaiPelanggan(siti);
+    const agentAdmin = await masukAdmin();
+    const id = await cariIdPelanggan(agentAdmin, siti.email);
+
+    const res = await agentAdmin
+      .patch(`/api/admin/pelanggan/${id}/aktif`)
+      .send({ aktif: "tidak" })
+      .expect(400);
+
+    expect(res.body.code).toBe("VALIDASI");
+  });
+
+  it("menolak Pengunjung dan Pelanggan", async () => {
+    const agentSiti = await daftarSebagaiPelanggan(siti);
+    const me = await agentSiti.get("/api/profil").expect(200);
+    const jalur = `/api/admin/pelanggan/${me.body.profil.id}/aktif`;
+
+    const pengunjung = await request(app)
+      .patch(jalur)
+      .send({ aktif: false })
+      .expect(401);
+    expect(pengunjung.body.code).toBe("BELUM_MASUK");
+
+    const pelanggan = await agentSiti
+      .patch(jalur)
+      .send({ aktif: false })
+      .expect(403);
+    expect(pelanggan.body.code).toBe("AKSES_DITOLAK");
+
+    const masihAktif = await agentSiti.get("/api/profil").expect(200);
+    expect(masihAktif.body.profil.email).toBe(siti.email);
+  });
+});
+
+describe("Penghapusan Pelanggan", () => {
+  it("tidak menyediakan endpoint hapus", async () => {
+    await daftarSebagaiPelanggan(siti);
+    const agentAdmin = await masukAdmin();
+    const id = await cariIdPelanggan(agentAdmin, siti.email);
+
+    await agentAdmin.delete(`/api/admin/pelanggan/${id}`).expect(404);
+
+    const res = await agentAdmin.get("/api/admin/pelanggan").expect(200);
+    expect(
+      daftarPelangganResponseSchema.parse(res.body).data.map(
+        (pelanggan) => pelanggan.email,
+      ),
+    ).toEqual([siti.email]);
+  });
+});
+
+
