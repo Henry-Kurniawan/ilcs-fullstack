@@ -23,11 +23,12 @@ export function namaBerkasLaporan(
 }
 
 const KOLOM = [
-  { judul: "Tanggal Bayar", lebar: 90 },
-  { judul: "Lagu", lebar: 125 },
-  { judul: "Artis", lebar: 100 },
-  { judul: "Pelanggan", lebar: 110 },
-  { judul: "Harga", lebar: 90, rataKanan: true },
+  { judul: "Tanggal Bayar", lebar: 88 },
+  { judul: "Lagu", lebar: 108 },
+  { judul: "Artis", lebar: 84 },
+  { judul: "Pelanggan", lebar: 90 },
+  { judul: "Harga", lebar: 72, rataKanan: true },
+  { judul: "Total", lebar: 73, rataKanan: true },
 ] as const;
 
 const LEBAR_TABEL = KOLOM.reduce((jumlah, kolom) => jumlah + kolom.lebar, 0);
@@ -98,6 +99,7 @@ export async function buatPdfLaporan(
       baris.artis,
       baris.pelanggan,
       formatRupiah.format(baris.harga),
+      formatRupiah.format(baris.total),
     ];
     let x = MARGIN;
     for (const [indeks, kolom] of KOLOM.entries()) {
@@ -153,6 +155,12 @@ export async function buatExcelLaporan(
       width: 16,
       style: { numFmt: "#,##0" },
     },
+    {
+      header: "Total",
+      key: "total",
+      width: 16,
+      style: { numFmt: "#,##0" },
+    },
   ];
   sheet.getRow(1).font = { bold: true };
 
@@ -163,12 +171,13 @@ export async function buatExcelLaporan(
       artis: baris.artis,
       pelanggan: baris.pelanggan,
       harga: baris.harga,
+      total: baris.total,
     });
   }
 
-  const barisTotal = sheet.addRow({ tanggalBayar: "Total", harga: laporan.total });
+  const barisTotal = sheet.addRow({ tanggalBayar: "Total", total: laporan.total });
   barisTotal.font = { bold: true };
-  barisTotal.getCell(5).numFmt = "#,##0";
+  barisTotal.getCell(6).numFmt = "#,##0";
 
   const isi = await workbook.xlsx.writeBuffer();
   return Buffer.from(isi as ArrayBuffer);

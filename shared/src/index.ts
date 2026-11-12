@@ -420,6 +420,8 @@ export const barisLaporanSchema = z.object({
   artis: z.string().min(1),
   pelanggan: z.string().min(1),
   harga: z.number().int().nonnegative(),
+  // Satu Item Pembelian adalah satu Lagu, jadi total baris sama dengan harga.
+  total: z.number().int().nonnegative(),
 });
 
 export type BarisLaporan = z.infer<typeof barisLaporanSchema>;

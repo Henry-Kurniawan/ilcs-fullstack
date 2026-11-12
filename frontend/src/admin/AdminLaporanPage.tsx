@@ -182,6 +182,9 @@ export function AdminLaporanPage() {
                     <th scope="col" className="px-4 py-3 text-right">
                       Harga
                     </th>
+                    <th scope="col" className="px-4 py-3 text-right">
+                      Total
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -202,6 +205,9 @@ export function AdminLaporanPage() {
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-right text-slate-900">
                         {formatRupiah(baris.harga)}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-right text-slate-900">
+                        {formatRupiah(baris.total)}
                       </td>
                     </tr>
                   ))}

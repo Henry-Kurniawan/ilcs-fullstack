@@ -81,6 +81,7 @@ const laporanPenjualan = {
       artis: lagu.artis,
       pelanggan: pelanggan.nama,
       harga: lagu.harga,
+      total: lagu.harga,
     },
   ],
 };
@@ -368,7 +369,7 @@ it("menampilkan Laporan Penjualan dengan tabel dan ekspor untuk Admin", async ()
   expect(screen.getByText("Rina Prasetya")).toBeTruthy();
   expect(screen.getByText("Siti Rahma")).toBeTruthy();
   expect(screen.getByText("05/11/2026 10:00")).toBeTruthy();
-  expect(screen.getByText(/^Total/).textContent).toContain("25.000");
+  expect(screen.getByText(/^Total:/).textContent).toContain("25.000");
   expect(screen.getByRole("link", { name: "Ekspor PDF" })).toBeTruthy();
   expect(screen.getByRole("link", { name: "Ekspor Excel" })).toBeTruthy();
   expect(
