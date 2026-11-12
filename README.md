@@ -19,17 +19,25 @@ Prasyarat: Node 22.18 atau lebih baru (target produksi Node 26), npm, dan Docker
 npm install
 cp .env.example .env   # opsional, nilai bawaan sudah cocok dengan Docker Compose
 npm run dev            # PostgreSQL, migrasi, backend (:3000), frontend (:5173)
+npm run seed           # membuat akun Admin dari ADMIN_EMAIL dan ADMIN_PASSWORD
 ```
 
-Buka http://localhost:5173. Halaman awal menampilkan status health dari `/api/health` (frontend memakai proxy Vite).
+Buka http://localhost:5173. Halaman awal adalah beranda MusicPedia dengan tautan masuk dan daftar; katalog Lagu diisi oleh pengembangan berikutnya. Frontend memakai proxy Vite ke `/api`.
 
-## Skrip
+## Akun dan sesi
+- Registrasi hanya membuat Pelanggan. Admin tidak pernah dibuat lewat registrasi.
+- `npm run seed` bersifat idempoten: menjalankannya berulang kali tetap menghasilkan satu Admin.
+- Sesi disimpan di tabel `sesi` PostgreSQL lewat cookie `musicpedia.sid` (`httpOnly`, `SameSite=Lax`, `Secure` bila `NODE_ENV=production`). Alasannya ada di [ADR 0003](docs/adr/0003-sesi-di-postgresql.md).
+- `SESSION_SECRET` wajib diisi di produksi. `ADMIN_PASSWORD` juga wajib diisi saat menjalankan seed di produksi.
+
+## Perintah
 | Perintah | Fungsi |
 | --- | --- |
 | `npm run dev` | Menjalankan PostgreSQL, migrasi, backend, dan frontend |
 | `npm test` | `tsc --noEmit` semua workspace, lalu Vitest (membutuhkan Docker untuk PostgreSQL) |
 | `npm run build` | Build frontend ke `frontend/dist` |
 | `npm run migrate` | Menjalankan migrasi SQL di `backend/migrations` |
+| `npm run seed` | Menjalankan migrasi lalu membuat/menyegarkan satu akun Admin |
 | `npm run db:up` | Menjalankan PostgreSQL saja |
 
 PostgreSQL dev berjalan di port 5433. Tes memakai database `musicpedia_test` yang dibuat ulang setiap kali dijalankan.
