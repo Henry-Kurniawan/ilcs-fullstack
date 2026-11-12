@@ -23,6 +23,13 @@ const lagu = {
   harga: 25000,
 };
 
+const pelanggan = {
+  id: 9,
+  email: "siti@example.com",
+  nama: "Siti Rahma",
+  aktif: true,
+};
+
 function stubFetch(akun: AkunUji | null = null) {
   vi.stubGlobal(
     "fetch",
@@ -32,12 +39,17 @@ function stubFetch(akun: AkunUji | null = null) {
         ? { akun }
         : url.startsWith("/api/genre")
           ? { data: [lagu.genre] }
-          : url === `/api/lagu/${lagu.id}`
-            ? { data: lagu }
-            : {
-                data: [lagu],
-                meta: { halaman: 1, ukuran: 12, total: 1, totalHalaman: 1 },
-              };
+          : url.startsWith("/api/admin/pelanggan")
+            ? {
+                data: [pelanggan],
+                meta: { halaman: 1, ukuran: 20, total: 1, totalHalaman: 1 },
+              }
+            : url === `/api/lagu/${lagu.id}`
+              ? { data: lagu }
+              : {
+                  data: [lagu],
+                  meta: { halaman: 1, ukuran: 12, total: 1, totalHalaman: 1 },
+                };
       return { ok: true, status: 200, json: async () => body } as Response;
     }),
   );
@@ -133,5 +145,38 @@ it("menampilkan halaman profil Pelanggan", async () => {
   expect(screen.getByLabelText("Kata sandi lama")).toBeTruthy();
   expect(screen.getByLabelText("Kata sandi baru")).toBeTruthy();
   expect(screen.getByRole("button", { name: "Ganti kata sandi" })).toBeTruthy();
+});
+
+it("menampilkan area Admin Pelanggan bagi Admin", async () => {
+  stubFetch({
+    id: 1,
+    email: "admin@musicpedia.id",
+    nama: "",
+    peran: "ADMIN",
+    aktif: true,
+  });
+  renderRute("/admin/pelanggan");
+
+  expect(await screen.findByRole("heading", { name: "Pelanggan" })).toBeTruthy();
+  expect(screen.getByPlaceholderText("Cari nama atau email")).toBeTruthy();
+  expect(await screen.findByText("siti@example.com")).toBeTruthy();
+  expect(screen.getByText("Siti Rahma")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Ubah" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Nonaktifkan" })).toBeTruthy();
+});
+
+it("mengalihkan Pelanggan yang membuka area Admin", async () => {
+  stubFetch({
+    id: 2,
+    email: "siti@example.com",
+    nama: "Siti Rahma",
+    peran: "PELANGGAN",
+    aktif: true,
+  });
+  renderRute("/admin/pelanggan");
+
+  expect(
+    await screen.findByRole("heading", { name: "Katalog Lagu" }),
+  ).toBeTruthy();
 });
 
