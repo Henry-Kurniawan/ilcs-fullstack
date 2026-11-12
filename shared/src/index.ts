@@ -125,3 +125,26 @@ export const daftarGenreResponseSchema = z.object({
 });
 
 export type DaftarGenreResponse = z.infer<typeof daftarGenreResponseSchema>;
+
+export const keranjangSchema = z.object({
+  items: z.array(laguSchema),
+  total: z.number().int().nonnegative(),
+  jumlah: z.number().int().nonnegative(),
+});
+
+export type Keranjang = z.infer<typeof keranjangSchema>;
+
+export const keranjangResponseSchema = z.object({
+  data: keranjangSchema,
+});
+
+export type KeranjangResponse = z.infer<typeof keranjangResponseSchema>;
+
+export const tambahKeranjangRequestSchema = z.strictObject({
+  laguId: z.number().int().positive(),
+});
+
+export type TambahKeranjangRequest = z.infer<
+  typeof tambahKeranjangRequestSchema
+>;
+
