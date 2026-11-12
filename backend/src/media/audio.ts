@@ -72,6 +72,13 @@ export interface PermintaanAudio {
   ffmpegPath: string;
   audioDir: string;
   sumberPath: string;
+  /**
+   * Nama dasar berkas hasil. Bila diisi, path menjadi deterministik
+   * (`mp3/<namaDasar>.mp3` dan `trial/<namaDasar>.mp3`), sehingga seed Data
+   * Demo yang dijalankan ulang memakai berkas yang sama. Bila kosong, nama
+   * acak dipakai seperti unggahan Admin.
+   */
+  namaDasar?: string;
 }
 
 /**
@@ -83,8 +90,9 @@ export async function buatFileAudio({
   ffmpegPath,
   audioDir,
   sumberPath,
+  namaDasar,
 }: PermintaanAudio): Promise<HasilAudio> {
-  const id = randomUUID();
+  const id = namaDasar ?? randomUUID();
   const fileMp3 = `mp3/${id}.mp3`;
   const fileTrial = `trial/${id}.mp3`;
   const pathMp3 = pathAudio(audioDir, fileMp3);
