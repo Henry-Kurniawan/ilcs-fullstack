@@ -100,3 +100,16 @@ export async function daftarGenre(pool: Pool): Promise<Genre[]> {
   );
   return rows;
 }
+
+export async function trialLagu(
+  pool: Pool,
+  id: number,
+): Promise<{ fileTrial: string } | null> {
+  const { rows } = await pool.query<{ fileTrial: string }>(
+    `SELECT file_trial AS "fileTrial"
+     FROM lagu
+     WHERE id = $1 AND tersembunyi = false AND file_trial IS NOT NULL`,
+    [id],
+  );
+  return rows[0] ?? null;
+}

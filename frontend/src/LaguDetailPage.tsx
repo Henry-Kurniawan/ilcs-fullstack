@@ -10,6 +10,7 @@ export function LaguDetailPage() {
   const { id } = useParams();
   const [lagu, setLagu] = useState<Lagu | null>(null);
   const [status, setStatus] = useState<Status>("memuat");
+  const [trialGagal, setTrialGagal] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -97,6 +98,33 @@ export function LaguDetailPage() {
           </dl>
 
           <TambahKeranjangButton laguId={lagu.id} />
+
+          <section className="mt-6 rounded-lg border border-slate-200 bg-white p-5">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+              Trial 30 detik
+            </h2>
+            {trialGagal ? (
+              <p className="mt-2 text-sm text-slate-600">
+                Trial tidak tersedia untuk Lagu ini.
+              </p>
+            ) : (
+              <>
+                <audio
+                  className="mt-3 w-full"
+                  controls
+                  preload="metadata"
+                  controlsList="nodownload"
+                  src={`/api/lagu/${lagu.id}/trial`}
+                  onError={() => setTrialGagal(true)}
+                >
+                  Peramban Anda tidak mendukung pemutar audio.
+                </audio>
+                <p className="mt-2 text-xs text-slate-500">
+                  Trial hanya untuk didengarkan, tidak bisa diunduh.
+                </p>
+              </>
+            )}
+          </section>
         </article>
       )}
     </main>

@@ -23,6 +23,8 @@ const lagu = {
   harga: 25000,
 };
 
+const laguAdmin = { ...lagu, tersembunyi: true };
+
 const pelanggan = {
   id: 9,
   email: "siti@example.com",
@@ -37,11 +39,16 @@ function stubFetch(akun: AkunUji | null = null) {
       const url = String(input);
       const body = url.startsWith("/api/auth/me")
         ? { akun }
-        : url.startsWith("/api/keranjang")
+        : url.startsWith("/api/admin/lagu")
           ? {
-              data: { items: [lagu], total: lagu.harga, jumlah: 1 },
+              data: [laguAdmin],
+              meta: { halaman: 1, ukuran: 50, total: 1, totalHalaman: 1 },
             }
-          : url.startsWith("/api/genre")
+          : url.startsWith("/api/keranjang")
+            ? {
+                data: { items: [lagu], total: lagu.harga, jumlah: 1 },
+              }
+            : url.startsWith("/api/genre")
             ? { data: [lagu.genre] }
             : url.startsWith("/api/admin/pelanggan")
               ? {
@@ -130,6 +137,31 @@ it("menampilkan email dan tombol keluar saat Pelanggan sudah masuk", async () =>
 
   expect(await screen.findByText("siti@example.com")).toBeTruthy();
   expect(screen.getByRole("button", { name: "Keluar" })).toBeTruthy();
+});
+
+it("menutup area Admin bagi Pengunjung", async () => {
+  stubFetch(null);
+  renderRute("/admin/lagu");
+
+  expect(
+    await screen.findByRole("heading", { name: "Halaman ini khusus Admin" }),
+  ).toBeTruthy();
+});
+
+it("menampilkan daftar Lagu termasuk yang disembunyikan untuk Admin", async () => {
+  stubFetch({
+    id: 2,
+    email: "admin@musicpedia.id",
+    nama: "Admin Musikapedia",
+    peran: "ADMIN",
+    aktif: true,
+  });
+  renderRute("/admin/lagu");
+
+  expect(await screen.findByRole("heading", { name: "Kelola Lagu" })).toBeTruthy();
+  expect(await screen.findByText("Cahaya Pagi")).toBeTruthy();
+  expect(screen.getByText("Disembunyikan")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Tampilkan" })).toBeTruthy();
 });
 
 it("menampilkan jumlah Lagu di indikator Keranjang pada header", async () => {

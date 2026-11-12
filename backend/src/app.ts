@@ -13,6 +13,7 @@ import {
 } from "./keranjang/controller.ts";
 import { createKeranjangRepository } from "./keranjang/repository.ts";
 import { createKeranjangService } from "./keranjang/service.ts";
+import { siapkanDirektoriAudio } from "./media/audio.ts";
 import { createAuthMiddleware } from "./middleware/auth.ts";
 import { createPelangganController } from "./pelanggan/controller.ts";
 import { createPelangganRepository } from "./pelanggan/repository.ts";
@@ -46,6 +47,7 @@ const handleError: ErrorRequestHandler = (error, _req, res, _next) => {
 
 export function createApp({ pool, config }: AppDeps) {
   const app = express();
+  siapkanDirektoriAudio(config.audioDir);
   if (config.secureCookies) {
     app.set("trust proxy", 1);
   }
@@ -77,11 +79,19 @@ export function createApp({ pool, config }: AppDeps) {
     res.json(body);
   });
 
-  app.use("/api", katalogRouter(pool));
+  app.use("/api", katalogRouter(pool, { audioDir: config.audioDir }));
   app.use("/api", keranjangRouter(keranjangController, authMiddleware));
   app.use("/api/auth", createAuthRouter(authController));
   app.use("/api/profil", createProfilRouter(profilController, authMiddleware));
-  app.use("/api/admin", createAdminRouter(authMiddleware, pelangganController));
+  app.use(
+    "/api/admin",
+    createAdminRouter({
+      pool,
+      config,
+      authMiddleware,
+      pelangganController,
+    }),
+  );
 
   app.use(handleError);
 

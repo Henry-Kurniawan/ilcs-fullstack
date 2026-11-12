@@ -1,3 +1,5 @@
+import path from "node:path";
+
 export interface Config {
   port: number;
   databaseUrl: string;
@@ -6,6 +8,8 @@ export interface Config {
   secureCookies: boolean;
   adminEmail: string;
   adminPassword: string;
+  audioDir: string;
+  ffmpegPath: string;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -32,5 +36,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     secureCookies: nodeEnv === "production",
     adminEmail: env.ADMIN_EMAIL ?? "admin@musicpedia.id",
     adminPassword: env.ADMIN_PASSWORD ?? "admin12345",
+    audioDir: path.resolve(env.AUDIO_DIR ?? "audio"),
+    ffmpegPath: env.FFMPEG_PATH ?? "ffmpeg",
   };
 }
