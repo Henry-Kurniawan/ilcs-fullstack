@@ -1,15 +1,11 @@
 import type { Lagu } from "@musicpedia/shared";
 import type { Pool } from "../db.ts";
+import type { KepemilikanLagu } from "../domain/kepemilikan.ts";
 import {
   KOLOM_LAGU,
   keLagu,
   type BarisLagu,
 } from "../katalog/repository.ts";
-
-export interface StatusPembelianLagu {
-  dimiliki: boolean;
-  menungguPembayaran: boolean;
-}
 
 export interface KeranjangRepository {
   daftar(pelangganId: number): Promise<Lagu[]>;
@@ -19,7 +15,7 @@ export interface KeranjangRepository {
   statusPembelian(
     pelangganId: number,
     laguId: number,
-  ): Promise<StatusPembelianLagu>;
+  ): Promise<KepemilikanLagu>;
 }
 
 export function createKeranjangRepository(pool: Pool): KeranjangRepository {
@@ -82,8 +78,8 @@ export function createKeranjangRepository(pool: Pool): KeranjangRepository {
       );
 
       return {
-        dimiliki: rows[0]?.lunas === true,
-        menungguPembayaran: rows[0]?.menunggu === true,
+        lunas: rows[0]?.lunas === true,
+        menunggu: rows[0]?.menunggu === true,
       };
     },
   };

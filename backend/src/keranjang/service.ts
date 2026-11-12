@@ -1,4 +1,5 @@
 import type { Keranjang, Lagu } from "@musicpedia/shared";
+import { pastikanLaguBelumDimiliki } from "../domain/kepemilikan.ts";
 import { AppError, isUniqueViolation } from "../errors.ts";
 import type { KeranjangRepository } from "./repository.ts";
 
@@ -40,20 +41,7 @@ export function createKeranjangService({
       }
 
       const status = await repo.statusPembelian(pelangganId, laguId);
-      if (status.dimiliki) {
-        throw new AppError(
-          409,
-          "LAGU_SUDAH_DIMILIKI",
-          "Lagu ini sudah Anda miliki.",
-        );
-      }
-      if (status.menungguPembayaran) {
-        throw new AppError(
-          409,
-          "LAGU_MENUNGGU_PEMBAYARAN",
-          "Lagu ini sedang menunggu pembayaran.",
-        );
-      }
+      pastikanLaguBelumDimiliki([status]);
 
       try {
         await repo.tambah(pelangganId, laguId);

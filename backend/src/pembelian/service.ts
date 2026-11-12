@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { Pembelian, PembelianCheckout } from "@musicpedia/shared";
 import { withTransaction, type Pool } from "../db.ts";
+import { pastikanLaguBelumDimiliki } from "../domain/kepemilikan.ts";
 import { AppError } from "../errors.ts";
 import type { PaymentGateway } from "../payment-gateway/client.ts";
 import {
@@ -67,20 +68,7 @@ export function createPembelianService(
           pelangganId,
           lagu.map((item) => item.laguId),
         );
-        if (status.some((item) => item.lunas)) {
-          throw new AppError(
-            409,
-            "LAGU_SUDAH_DIMILIKI",
-            "Ada Lagu di Keranjang yang sudah Anda miliki.",
-          );
-        }
-        if (status.some((item) => item.menunggu)) {
-          throw new AppError(
-            409,
-            "LAGU_MENUNGGU_PEMBAYARAN",
-            "Ada Lagu di Keranjang yang sedang menunggu pembayaran.",
-          );
-        }
+        pastikanLaguBelumDimiliki(status);
 
         const total = lagu.reduce((jumlah, item) => jumlah + item.harga, 0);
         const kodeOrder = kodeOrderBaru();
