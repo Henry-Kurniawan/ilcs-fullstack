@@ -33,7 +33,8 @@ export function createKatalogController({
           "Parameter daftar Lagu tidak valid.",
         );
       }
-      res.json(await service.daftarLagu(query.data));
+      // Katalog tetap publik; sesi hanya dipakai untuk menandai Lagu milik Pelanggan.
+      res.json(await service.daftarLagu(query.data, req.currentAkun?.id));
     },
 
     async trial(req, res) {

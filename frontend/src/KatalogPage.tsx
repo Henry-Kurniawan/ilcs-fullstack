@@ -157,7 +157,13 @@ export function KatalogPage() {
           <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {hasil.data.map((lagu) => (
               <li key={lagu.id}>
-                <article className="h-full rounded-lg border border-stone-200 bg-white p-4 shadow-sm transition hover:shadow-md">
+                <article
+                  className={
+                    lagu.dimiliki
+                      ? "h-full rounded-lg border border-stone-200 bg-stone-50 p-4 opacity-60"
+                      : "h-full rounded-lg border border-stone-200 bg-white p-4 shadow-sm transition hover:shadow-md"
+                  }
+                >
                   <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
                     {lagu.genre.nama}
                   </p>
@@ -178,7 +184,17 @@ export function KatalogPage() {
                       {formatRupiah(lagu.harga)}
                     </span>
                   </div>
-                  <TambahKeranjangButton laguId={lagu.id} ringkas />
+                  {lagu.dimiliki ? (
+                    <button
+                      type="button"
+                      disabled
+                      className="mt-3 w-full cursor-not-allowed rounded-md border border-stone-300 px-3 py-1.5 text-sm font-semibold text-stone-500"
+                    >
+                      Sudah dimiliki
+                    </button>
+                  ) : (
+                    <TambahKeranjangButton laguId={lagu.id} ringkas />
+                  )}
                 </article>
               </li>
             ))}

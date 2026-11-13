@@ -207,8 +207,16 @@ export const pelangganResponseSchema = z.object({
 
 export type PelangganResponse = z.infer<typeof pelangganResponseSchema>;
 
+// `dimiliki` true bila Pelanggan yang masuk punya Pembelian Lunas untuk Lagu
+// itu; selalu false untuk pengunjung yang belum masuk.
+export const laguKatalogSchema = laguSchema.extend({
+  dimiliki: z.boolean(),
+});
+
+export type LaguKatalog = z.infer<typeof laguKatalogSchema>;
+
 export const daftarLaguResponseSchema = z.object({
-  data: z.array(laguSchema),
+  data: z.array(laguKatalogSchema),
   meta: metaHalamanSchema,
 });
 

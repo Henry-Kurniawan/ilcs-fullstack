@@ -1,4 +1,4 @@
-import type { Genre, Lagu, UrutanLagu } from "@musicpedia/shared";
+import type { Genre, Lagu, LaguKatalog, UrutanLagu } from "@musicpedia/shared";
 import type { Pool } from "../db.ts";
 
 export interface BarisLagu {
@@ -19,6 +19,8 @@ export interface FilterLagu {
   urutan: UrutanLagu;
   limit: number;
   offset: number;
+  /** Pelanggan yang sedang masuk, untuk menandai dan mengurutkan Lagu yang sudah dimiliki. */
+  pelangganId?: number;
 }
 
 export const KOLOM_LAGU = `
@@ -53,12 +55,20 @@ export function keLagu(baris: BarisLagu): Lagu {
 export async function daftarLagu(
   pool: Pool,
   filter: FilterLagu,
-): Promise<{ items: Lagu[]; total: number }> {
+): Promise<{ items: LaguKatalog[]; total: number }> {
   const cari = filter.cari ? polaCari(filter.cari) : null;
   const genre = filter.genre ?? null;
 
-  const { rows } = await pool.query<BarisLagu>(
-    `SELECT ${KOLOM_LAGU}
+  const { rows } = await pool.query<BarisLagu & { dimiliki: boolean }>(
+    `SELECT ${KOLOM_LAGU},
+       EXISTS (
+         SELECT 1
+         FROM item_pembelian ipm
+         JOIN pembelian pm ON pm.id = ipm.pembelian_id
+         WHERE pm.status = 'LUNAS'
+           AND pm.pelanggan_id = $6::integer
+           AND ipm.lagu_id = l.id
+       ) AS dimiliki
      FROM lagu l
      JOIN genre g ON g.id = l.genre_id
      LEFT JOIN (
@@ -72,11 +82,19 @@ export async function daftarLagu(
        AND ($1::text IS NULL OR l.judul ILIKE $1 ESCAPE '\\' OR l.artis ILIKE $1 ESCAPE '\\')
        AND ($2::integer IS NULL OR l.genre_id = $2)
      ORDER BY
+       dimiliki ASC,
        CASE WHEN $5::text = 'terlaris'
             THEN COALESCE(penjualan.jumlah_lunas, 0) END DESC,
        l.tanggal_rilis DESC, l.id DESC
      LIMIT $3 OFFSET $4`,
-    [cari, genre, filter.limit, filter.offset, filter.urutan],
+    [
+      cari,
+      genre,
+      filter.limit,
+      filter.offset,
+      filter.urutan,
+      filter.pelangganId ?? null,
+    ],
   );
 
   const hitung = await pool.query<{ total: number }>(
@@ -89,7 +107,7 @@ export async function daftarLagu(
   );
 
   return {
-    items: rows.map(keLagu),
+    items: rows.map((baris) => ({ ...keLagu(baris), dimiliki: baris.dimiliki })),
     total: hitung.rows[0]!.total,
   };
 }
