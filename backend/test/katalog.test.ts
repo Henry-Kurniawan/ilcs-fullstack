@@ -1,4 +1,5 @@
 import request from "supertest";
+import type { Agent } from "supertest";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import {
   daftarGenreResponseSchema,
@@ -126,6 +127,7 @@ describe("GET /api/lagu", () => {
       labelRekaman: "Label Baru",
       tanggalRilis: "2024-05-01",
       harga: 25000,
+      dimiliki: false,
     });
     expect(body.meta).toEqual({
       halaman: 1,
@@ -351,5 +353,89 @@ describe("GET /api/lagu/:id", () => {
       error: "Lagu tidak ditemukan.",
       code: "TIDAK_DITEMUKAN",
     });
+  });
+});
+
+describe("GET /api/lagu untuk Pelanggan yang masuk", () => {
+  async function daftarDanMasuk(
+    email: string,
+  ): Promise<{ id: number; agent: Agent }> {
+    const password = "rahasia123";
+    await request(app)
+      .post("/api/auth/register")
+      .send({ email, password })
+      .expect(201);
+    const agent = request.agent(app);
+    await agent.post("/api/auth/login").send({ email, password }).expect(200);
+    const { rows } = await pool.query<{ id: number }>(
+      "SELECT id FROM akun WHERE email = $1",
+      [email],
+    );
+    return { id: rows[0]!.id, agent };
+  }
+
+  async function catatPembelian(
+    pelangganId: number,
+    laguId: number,
+    status: "MENUNGGU_PEMBAYARAN" | "LUNAS",
+  ): Promise<void> {
+    const { rows } = await pool.query<{ id: number }>(
+      `INSERT INTO pembelian (pelanggan_id, status, total, dibayar_pada)
+       VALUES ($1, $2, 15000, CASE WHEN $2 = 'LUNAS' THEN now() ELSE NULL END)
+       RETURNING id`,
+      [pelangganId, status],
+    );
+    await pool.query(
+      "INSERT INTO item_pembelian (pembelian_id, lagu_id, harga) VALUES ($1, $2, 15000)",
+      [rows[0]!.id, laguId],
+    );
+  }
+
+  it("menandai Lagu Lunas milik Pelanggan sebagai dimiliki dan menaruhnya paling belakang", async () => {
+    const pop = await buatGenre("Pop");
+    const terbaru = await buatLagu({
+      judul: "Terbaru",
+      artis: "A",
+      genreId: pop,
+      tanggalRilis: "2025-01-01",
+    });
+    await buatLagu({
+      judul: "Tengah",
+      artis: "A",
+      genreId: pop,
+      tanggalRilis: "2024-01-01",
+    });
+    const menunggu = await buatLagu({
+      judul: "Menunggu",
+      artis: "A",
+      genreId: pop,
+      tanggalRilis: "2023-01-01",
+    });
+
+    const siti = await daftarDanMasuk("siti@example.com");
+    const budi = await daftarDanMasuk("budi@example.com");
+    await catatPembelian(siti.id, terbaru, "LUNAS");
+    await catatPembelian(siti.id, menunggu, "MENUNGGU_PEMBAYARAN");
+
+    const milikSiti = daftarLaguResponseSchema.parse(
+      (await siti.agent.get("/api/lagu").expect(200)).body,
+    );
+    expect(milikSiti.data.map((lagu) => [lagu.judul, lagu.dimiliki])).toEqual([
+      ["Tengah", false],
+      ["Menunggu", false],
+      ["Terbaru", true],
+    ]);
+
+    // Pelanggan lain dan Pengunjung tidak melihat kepemilikan Siti.
+    for (const klien of [budi.agent, request(app)]) {
+      const body = daftarLaguResponseSchema.parse(
+        (await klien.get("/api/lagu").expect(200)).body,
+      );
+      expect(body.data.map((lagu) => [lagu.judul, lagu.dimiliki])).toEqual([
+        ["Terbaru", false],
+        ["Tengah", false],
+        ["Menunggu", false],
+      ]);
+    }
   });
 });

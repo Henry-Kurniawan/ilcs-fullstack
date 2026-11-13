@@ -71,6 +71,7 @@ describe("seed katalog", () => {
       labelRekaman: "Musika Records",
       tanggalRilis: "2024-09-12",
       harga: 25000,
+      dimiliki: false,
     });
   });
 });

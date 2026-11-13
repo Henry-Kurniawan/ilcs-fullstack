@@ -9,7 +9,10 @@ import { buatMetaHalaman } from "../pagination.ts";
 import { daftarGenre, daftarLagu, detailLagu, trialLagu } from "./repository.ts";
 
 export interface KatalogService {
-  daftarLagu(query: DaftarLaguQuery): Promise<DaftarLaguResponse>;
+  daftarLagu(
+    query: DaftarLaguQuery,
+    pelangganId?: number,
+  ): Promise<DaftarLaguResponse>;
   detailLagu(id: number): Promise<Lagu | null>;
   daftarGenre(): Promise<DaftarGenreResponse>;
   fileTrial(id: number): Promise<string | null>;
@@ -17,7 +20,7 @@ export interface KatalogService {
 
 export function createKatalogService(pool: Pool): KatalogService {
   return {
-    async daftarLagu(query) {
+    async daftarLagu(query, pelangganId) {
       const offset = (query.halaman - 1) * query.ukuran;
       const { items, total } = await daftarLagu(pool, {
         // Parameter pencarian kosong dari query string sama dengan tanpa
@@ -27,6 +30,7 @@ export function createKatalogService(pool: Pool): KatalogService {
         urutan: query.urutan,
         limit: query.ukuran,
         offset,
+        pelangganId,
       });
 
       return {

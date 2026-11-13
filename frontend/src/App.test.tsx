@@ -87,7 +87,7 @@ const laporanPenjualan = {
   ],
 };
 
-function stubFetch(akun: AkunUji | null = null) {
+function stubFetch(akun: AkunUji | null = null, dimiliki = false) {
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: RequestInfo | URL) => {
@@ -125,7 +125,7 @@ function stubFetch(akun: AkunUji | null = null) {
               : url === `/api/lagu/${lagu.id}`
                 ? { data: lagu }
                 : {
-                    data: [lagu],
+                    data: [{ ...lagu, dimiliki }],
                     meta: { halaman: 1, ukuran: 12, total: 1, totalHalaman: 1 },
                   };
       return { ok: true, status: 200, json: async () => body } as Response;
@@ -161,6 +161,27 @@ it("menampilkan katalog dengan kotak cari, filter genre, dan tautan masuk untuk 
     "Cahaya Pagi",
   );
   expect(screen.getByText(/25\.000/)).toBeTruthy();
+});
+
+it("menandai Lagu yang sudah dimiliki di katalog dengan tombol nonaktif", async () => {
+  stubFetch(
+    {
+      id: 3,
+      email: "siti@example.com",
+      nama: "Siti",
+      telepon: null,
+      peran: "PELANGGAN",
+      aktif: true,
+    },
+    true,
+  );
+  renderRute("/");
+
+  const tombol = await screen.findByRole("button", { name: "Sudah dimiliki" });
+  expect((tombol as HTMLButtonElement).disabled).toBe(true);
+  expect(
+    screen.queryByRole("button", { name: "Tambah ke Keranjang" }),
+  ).toBeNull();
 });
 
 it("menampilkan halaman detail Lagu", async () => {
